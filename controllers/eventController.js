@@ -2,13 +2,33 @@ import Event from '../models/Event.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { defaultEvents } from '../utils/defaultContent.js';
 
-export const getEvents = asyncHandler(async (req, res) => {
-  let events = await Event.find().sort({ date: 1 });
-  if (!events.length) {
+/** Seed default events when the collection is empty. */
+const seedIfEmpty = async () => {
+  const count = await Event.countDocuments();
+  if (count === 0) {
     await Event.insertMany(defaultEvents);
-    events = await Event.find().sort({ date: 1 });
   }
-  res.json(events);
+};
+
+export const getEvents = asyncHandler(async (req, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 15));
+  const skip = (page - 1) * limit;
+
+  await seedIfEmpty();
+
+  const [total, events] = await Promise.all([
+    Event.countDocuments(),
+    Event.find().sort({ date: 1 }).skip(skip).limit(limit),
+  ]);
+
+  res.json({
+    events,
+    page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit),
+  });
 });
 
 export const getEventById = asyncHandler(async (req, res) => {
@@ -23,16 +43,14 @@ export const getEventById = asyncHandler(async (req, res) => {
 });
 
 export const getUpcomingEvents = asyncHandler(async (req, res) => {
-  const limit = Number(req.query.limit) || 6;
-  let events = await Event.find({ date: { $gte: new Date() } })
+  const limit = Math.min(20, Math.max(1, Number(req.query.limit) || 6));
+
+  await seedIfEmpty();
+
+  const events = await Event.find({ date: { $gte: new Date() } })
     .sort({ date: 1 })
     .limit(limit);
-  if (!events.length) {
-    await Event.insertMany(defaultEvents);
-    events = await Event.find({ date: { $gte: new Date() } })
-      .sort({ date: 1 })
-      .limit(limit);
-  }
+
   res.json(events);
 });
 

@@ -11,6 +11,8 @@ const activitySchema = new mongoose.Schema(
     content: { type: String, required: true, trim: true },
     body: { type: String, default: '', trim: true },
     image: { type: String, default: '' },
+    date: { type: Date, default: null },
+    location: { type: String, default: '', trim: true },
     highlights: [{ type: String, trim: true }],
     registerUrl: { type: String, default: '' },
     registerLabel: { type: String, default: 'Register / Learn More', trim: true },

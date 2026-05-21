@@ -473,6 +473,132 @@ export const defaultEvents = [
     location: 'New Delhi',
     registerUrl: '/membership',
   },
+  {
+    title: 'Tracheostomy Timing and Weaning Symposium',
+    description: 'Evidence-based discussion on optimal tracheostomy timing, decannulation protocols, and weaning strategies for prolonged ventilated patients.',
+    body: 'This symposium addresses one of the most debated decisions in critical care: when to perform tracheostomy and how to plan safe decannulation.\n\nFaculty present data from multicenter trials comparing early versus late tracheostomy outcomes.\n\nPractical weaning checklists and communication frameworks for families are distributed to all participants.',
+    image: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 95).toISOString(),
+    location: 'Mumbai',
+    registerUrl: '/membership',
+  },
+  {
+    title: 'Cardiogenic Shock Management Workshop',
+    description: 'Hands-on workshop covering hemodynamic profiling, mechanical circulatory support, and team-based decision-making in cardiogenic shock.',
+    body: 'Cardiogenic shock carries high mortality and demands rapid, coordinated intervention.\n\nThis workshop uses simulation cases to practice hemodynamic profiling, vasopressor selection, and escalation to mechanical support.\n\nTeams leave with a shared decision framework for cardiogenic shock that integrates cardiology, critical care, and cardiac surgery inputs.',
+    image: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b6dd?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 108).toISOString(),
+    location: 'Kolkata',
+    registerUrl: '/membership',
+  },
+  {
+    title: 'Neurological Emergencies in the ICU',
+    description: 'A focused program on managing acute stroke, status epilepticus, raised ICP, and neuro-monitoring in the critical care setting.',
+    body: 'Neurological emergencies require rapid recognition and time-sensitive intervention.\n\nSessions cover ICP monitoring, neuroprotective ventilation, seizure management, and brain death determination protocols.\n\nCase-based learning reinforces decision-making under uncertainty in neuro-critical care scenarios.',
+    image: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 120).toISOString(),
+    location: 'Bengaluru',
+    registerUrl: '/membership',
+  },
+  {
+    title: 'Obstetric Critical Care Update',
+    description: 'Specialized sessions on managing eclampsia, peripartum cardiomyopathy, obstetric hemorrhage, and sepsis in pregnant patients.',
+    body: 'Critically ill obstetric patients present unique physiological challenges that require adapted critical care protocols.\n\nThis update covers eclampsia management, massive obstetric hemorrhage, and ICU care for peripartum cardiomyopathy.\n\nMultidisciplinary panels include intensivists, obstetricians, and anesthesiologists to model collaborative decision-making.',
+    image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 133).toISOString(),
+    location: 'Ahmedabad',
+    registerUrl: '/membership',
+  },
+  {
+    title: 'Palliative Care Integration in the ICU',
+    description: 'A program on integrating palliative principles, goals-of-care conversations, and end-of-life frameworks into critical care practice.',
+    body: 'Palliative care is not the absence of treatment — it is the alignment of care with patient values and prognosis.\n\nThis program trains intensivists in structured family communication, goals-of-care documentation, and symptom management for dying patients.\n\nParticipants develop unit-level frameworks for integrating palliative principles without compromising active critical care delivery.',
+    image: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 145).toISOString(),
+    location: 'Online Live Session',
+    registerUrl: '/membership',
+  },
+  {
+    title: 'Pediatric Critical Care Crossover Forum',
+    description: 'A collaborative forum exploring shared principles and key differences between adult and pediatric critical care management.',
+    body: 'This forum brings together adult and pediatric intensivists to explore overlapping protocols and critical differences in ventilation, fluid management, and sedation.\n\nCase presentations highlight transition-age patients and scenarios where adult and pediatric approaches diverge.\n\nThe forum strengthens cross-specialty communication and builds referral pathways between adult and pediatric ICUs.',
+    image: 'https://images.unsplash.com/photo-1551190822-a9333d879b1f?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 158).toISOString(),
+    location: 'Jaipur',
+    registerUrl: '/membership',
+  },
+  {
+    title: 'Toxicology and Poisoning in Critical Care',
+    description: 'A practical program on managing organophosphate poisoning, drug overdose, and envenomation in the ICU.',
+    body: 'Poisoning and toxicological emergencies are common ICU admissions in India and require specific management protocols.\n\nSessions cover organophosphate toxidrome recognition, antidote use, and ventilator management in poisoning-related respiratory failure.\n\nCase-based workshops reinforce rapid toxicology assessment and escalation decision-making.',
+    image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 170).toISOString(),
+    location: 'Lucknow',
+    registerUrl: '/membership',
+  },
+  {
+    title: 'Trauma and Surgical Critical Care Symposium',
+    description: 'A symposium on damage control resuscitation, post-operative ICU management, and trauma team coordination.',
+    body: 'Trauma patients require seamless coordination between emergency medicine, surgery, and critical care.\n\nThis symposium covers damage control resuscitation principles, massive transfusion protocols, and post-operative ICU monitoring.\n\nSimulation exercises reinforce team communication and rapid decision-making in high-acuity trauma scenarios.',
+    image: 'https://images.unsplash.com/photo-1504439468489-c8920d796a29?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 182).toISOString(),
+    location: 'Chandigarh',
+    registerUrl: '/membership',
+  },
+  {
+    title: 'Liver Failure and Hepatic Critical Care',
+    description: 'Focused sessions on acute liver failure, hepatic encephalopathy, and ICU management of end-stage liver disease.',
+    body: 'Acute liver failure and decompensated cirrhosis present complex multi-organ challenges in the ICU.\n\nSessions cover hepatic encephalopathy grading, coagulopathy management, and renal replacement therapy in liver failure.\n\nTransplant readiness assessment and bridge therapy options are discussed with hepatology and transplant surgery faculty.',
+    image: 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 195).toISOString(),
+    location: 'Chennai',
+    registerUrl: '/membership',
+  },
+  {
+    title: 'Respiratory Failure Beyond ARDS',
+    description: 'An advanced program on managing non-ARDS respiratory failure including COPD exacerbation, ILD, and post-COVID lung disease.',
+    body: 'Not all respiratory failure fits the ARDS framework, and management must adapt to underlying pathophysiology.\n\nThis program covers NIV strategies in COPD, ventilator management in ILD, and the emerging challenges of post-COVID respiratory sequelae.\n\nFaculty-led case reviews help participants build individualized ventilator strategies for complex respiratory presentations.',
+    image: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 207).toISOString(),
+    location: 'Hyderabad',
+    registerUrl: '/membership',
+  },
+  {
+    title: 'ICU Quality Metrics and Outcome Benchmarking',
+    description: 'A data-driven program on selecting, tracking, and improving ICU quality indicators across Indian hospital settings.',
+    body: 'Quality improvement in the ICU requires the right metrics, consistent measurement, and actionable feedback loops.\n\nThis program introduces a practical ICU scorecard covering mortality, LOS, infection rates, and process compliance indicators.\n\nParticipants build unit-specific dashboards and learn how to present quality data to hospital leadership for resource and policy decisions.',
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 220).toISOString(),
+    location: 'Pune',
+    registerUrl: '/membership',
+  },
+  {
+    title: 'Immunocompromised Patient in the ICU',
+    description: 'Specialized sessions on managing critically ill patients with HIV, hematological malignancies, and post-transplant immunosuppression.',
+    body: 'Immunocompromised patients present diagnostic and therapeutic challenges that require adapted critical care protocols.\n\nSessions cover opportunistic infection recognition, empirical antimicrobial strategies, and the risks of standard ICU interventions in immunosuppressed hosts.\n\nCase-based learning reinforces decision-making in scenarios where standard sepsis bundles may need modification.',
+    image: 'https://images.unsplash.com/photo-1576671081837-49000212a370?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 232).toISOString(),
+    location: 'Mumbai',
+    registerUrl: '/membership',
+  },
+  {
+    title: 'FICCS Annual National Conference 2027',
+    description: 'The flagship annual conference bringing together intensivists, trainees, and hospital leaders for two days of critical care education and advocacy.',
+    body: 'The FICCS Annual National Conference is the premier gathering of critical care professionals in India.\n\nThe program spans two days with keynote addresses, parallel workshops, research presentations, and policy panels.\n\nThis year\'s theme focuses on building resilient ICU systems that deliver consistent, high-quality care regardless of hospital size or resource setting.',
+    image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 245).toISOString(),
+    location: 'New Delhi',
+    registerUrl: '/membership',
+  },
+  {
+    title: 'Delirium and ICU Psychosis Management',
+    description: 'A focused program on recognizing, preventing, and managing ICU delirium using validated tools and non-pharmacological strategies.',
+    body: 'ICU delirium is underrecognized and undertreated, yet it significantly impacts patient outcomes and long-term cognitive function.\n\nThis program covers CAM-ICU assessment, ABCDEF bundle implementation, and pharmacological versus non-pharmacological delirium management.\n\nParticipants develop unit-level delirium prevention protocols and family engagement strategies for ICU patients.',
+    image: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1200&q=80',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 258).toISOString(),
+    location: 'Bengaluru',
+    registerUrl: '/membership',
+  },
 ];
 
 export const defaultActivities = [
@@ -485,6 +611,8 @@ export const defaultActivities = [
       'This academic series is built around real ICU complexity and case uncertainty.\n\nEach session uses a structured template: presentation, physiology framing, critical choices, and post-case reflection.\n\nThe track supports DM and DrNB readiness by linking bedside patterns to exam expectations and safe real-world application.',
     image:
       'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=80',
+    date: null,
+    location: '',
     highlights: ['Mentor-led bedside debriefs', 'Exam and practice integration', 'High-acuity case complexity'],
   },
   {
@@ -496,6 +624,8 @@ export const defaultActivities = [
       'Hospitals presenting in this series share pre- and post-transition ICU performance data, including mortality trends, LOS shifts, and process reliability metrics.\n\nPanels review practical barriers such as staffing alignment, referral pathways, and role clarity across specialties.\n\nThe result is a reusable transformation playbook for institutions planning a closed ICU shift.',
     image:
       'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=1200&q=80',
+    date: null,
+    location: '',
     highlights: ['Before-after outcome analysis', 'Implementation roadmaps', 'Cross-specialty workflow redesign'],
   },
   {
@@ -507,6 +637,8 @@ export const defaultActivities = [
       'The registry initiative aligns data definitions, severity markers, and timing endpoints to improve comparability across institutions.\n\nResearch mentors support hypothesis framing, ethics preparation, and manuscript planning.\n\nThe collaboration is designed to generate India-relevant evidence for sepsis management and systems improvement.',
     image:
       'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1200&q=80',
+    date: null,
+    location: '',
     highlights: ['Shared registry framework', 'Mentored publication support', 'Evidence for protocol improvement'],
   },
   {
@@ -518,6 +650,8 @@ export const defaultActivities = [
       'The bootcamp combines didactic modules with practical simulation stations to strengthen ventilator interpretation and intervention confidence.\n\nParticipants work through high-pressure scenarios involving hypoxemia, hypercapnia, and patient-ventilator dyssynchrony.\n\nBy the end of the track, teams build a shared language for safer ventilator decisions and rapid escalation.',
     image:
       'https://images.unsplash.com/photo-1584467735871-8f29d66f0f1b?auto=format&fit=crop&w=1200&q=80',
+    date: null,
+    location: '',
     highlights: ['Waveform-focused training', 'Simulation-based escalation', 'Protocolized ARDS pathways'],
   },
   {
@@ -529,6 +663,8 @@ export const defaultActivities = [
       'This forum examines the real-world consequences of diluted training claims in high-risk ICU environments.\n\nInteractive discussions help participants articulate institution-level policy statements aligned with recognized super-specialty frameworks.\n\nThe forum strengthens consensus that critically ill patients must receive care from properly trained intensivists.',
     image:
       'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80',
+    date: null,
+    location: '',
     highlights: ['Ethics and policy integration', 'Patient-safety first approach', 'Specialty integrity advocacy'],
   },
   {
@@ -540,6 +676,8 @@ export const defaultActivities = [
       'Participating units use a monthly metric framework to track infection patterns, bundle adherence, and escalation delays.\n\nThe program helps teams identify whether variation is due to documentation gaps, workflow breakdown, or delayed intervention decisions.\n\nCenters report practical gains in surveillance quality, communication reliability, and prevention consistency.',
     image:
       'https://images.unsplash.com/photo-1579684453407-31e8a9f9f470?auto=format&fit=crop&w=1200&q=80',
+    date: null,
+    location: '',
     highlights: ['Bundle adherence tracking', 'Monthly quality reviews', 'Actionable unit-level insights'],
   },
   {
@@ -551,6 +689,8 @@ export const defaultActivities = [
       'This module covers the principles and practical application of hemodynamic monitoring in the ICU setting.\n\nTopics include arterial waveform analysis, cardiac output measurement, fluid responsiveness assessment, and integration of echocardiography in shock management.\n\nParticipants learn to apply goal-directed therapy protocols that improve tissue perfusion and reduce organ dysfunction in septic and cardiogenic shock.',
     image:
       'https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&w=1200&q=80',
+    date: null,
+    location: '',
     highlights: ['Invasive monitoring techniques', 'Bedside echocardiography', 'Goal-directed resuscitation'],
   },
   {
@@ -562,6 +702,8 @@ export const defaultActivities = [
       'Nutrition support in the ICU remains a complex and evolving field. This conference track brings together intensivists and nutrition specialists to discuss timing, route, and composition of feeds.\n\nSessions cover early enteral nutrition, protein targets in critical illness, refeeding syndrome prevention, and the role of indirect calorimetry.\n\nPractical workshops help teams develop unit-specific nutrition protocols aligned with international guidelines.',
     image:
       'https://images.unsplash.com/photo-1559757175-5700dde675bc?auto=format&fit=crop&w=1200&q=80',
+    date: null,
+    location: '',
     highlights: ['Evidence-based protocols', 'Protein optimization', 'Unit-specific implementation'],
   },
   {
@@ -573,6 +715,8 @@ export const defaultActivities = [
       'Prolonged mechanical ventilation presents unique challenges in terms of weaning, tracheostomy timing, and rehabilitation planning.\n\nThis research initiative collects data on functional outcomes, ICU readmission rates, and patient-reported quality of life at 6 and 12 months post-discharge.\n\nFindings aim to inform better prognostication tools and resource allocation for long-stay ICU patients across Indian hospitals.',
     image:
       'https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=1200&q=80',
+    date: null,
+    location: '',
     highlights: ['Long-term outcome tracking', 'Quality of life metrics', 'Weaning protocol analysis'],
   },
   {
@@ -584,6 +728,8 @@ export const defaultActivities = [
       'Acute kidney injury affects a significant proportion of ICU patients and is associated with increased mortality and prolonged hospital stay.\n\nThis series covers KDIGO staging, biomarker-guided early detection, fluid and hemodynamic optimization, and indications for initiating renal replacement therapy.\n\nCase-based discussions focus on CRRT prescription, anticoagulation strategies, and timing of RRT discontinuation.',
     image:
       'https://images.unsplash.com/photo-1582719471384-894fbb16e074?auto=format&fit=crop&w=1200&q=80',
+    date: null,
+    location: '',
     highlights: ['KDIGO-based management', 'CRRT prescription', 'Biomarker-guided detection'],
   },
   {
@@ -595,6 +741,8 @@ export const defaultActivities = [
       'End-of-life discussions in the ICU require skill, empathy, and ethical clarity. This conference provides frameworks for breaking bad news, shared decision-making, and withdrawal of life-sustaining treatment.\n\nSessions include role-play exercises, cultural sensitivity training, and legal considerations specific to Indian healthcare.\n\nThe goal is to equip intensivists with communication tools that honor patient dignity while supporting families through difficult decisions.',
     image:
       'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1200&q=80',
+    date: null,
+    location: '',
     highlights: ['Family communication frameworks', 'Ethical decision-making', 'Palliative care integration'],
   },
 ];
