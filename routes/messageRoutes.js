@@ -7,16 +7,17 @@ import {
   markMessageRead,
   sendMessage,
 } from '../controllers/messageController.js';
-import { adminOnly, protect } from '../middleware/authMiddleware.js';
+import { adminOnly, memberOnly, protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Authenticated users
-router.get('/', protect, getMessages);
+// Approved members and admins only — non-members get 403 so the UI can show
+// a locked state with an "Apply for membership" CTA.
+router.get('/', protect, memberOnly, getMessages);
 // Static routes MUST come before parameterized routes
-router.patch('/read-all', protect, markAllMessagesRead);
-router.patch('/:id/read', protect, markMessageRead);
-router.delete('/:id/dismiss', protect, dismissMessage);
+router.patch('/read-all', protect, memberOnly, markAllMessagesRead);
+router.patch('/:id/read', protect, memberOnly, markMessageRead);
+router.delete('/:id/dismiss', protect, memberOnly, dismissMessage);
 
 // Admin only
 router.post('/', protect, adminOnly, sendMessage);

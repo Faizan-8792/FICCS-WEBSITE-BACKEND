@@ -1,18 +1,19 @@
-import MembershipPageContent from '../models/MembershipPageContent.js';
+import { getMembershipPageContent as getMembershipPageContentModel } from '../models/index.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { defaultMembershipPageContent } from '../utils/defaultContent.js';
 
 const getOrCreateMembershipPageContent = async () => {
+  const MembershipPageContent = getMembershipPageContentModel();
   let content = await MembershipPageContent.findOne();
 
   if (!content) {
     content = await MembershipPageContent.create(defaultMembershipPageContent);
   } else {
-    const plain = content.toObject();
     let needsSave = false;
+    const plain = content.toJSON();
     for (const [key, value] of Object.entries(defaultMembershipPageContent)) {
-      if (!(key in plain) || plain[key] === undefined || plain[key] === null) {
-        content.set(key, value);
+      if (plain[key] === undefined || plain[key] === null || plain[key] === '') {
+        content[key] = value;
         needsSave = true;
       }
     }
@@ -29,7 +30,6 @@ export const getMembershipPageContent = asyncHandler(async (req, res) => {
 
 export const updateMembershipPageContent = asyncHandler(async (req, res) => {
   const content = await getOrCreateMembershipPageContent();
-  Object.assign(content, req.body);
-  await content.save();
+  await content.update(req.body);
   res.json(content);
 });

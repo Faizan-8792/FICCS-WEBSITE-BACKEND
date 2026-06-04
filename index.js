@@ -7,7 +7,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootstrapAdmin } from './config/bootstrapAdmin.js';
 import { configureCloudinary } from './config/cloudinary.js';
-import { connectDb } from './config/db.js';
+import { connectDb, getSequelize } from './config/db.js';
+import { initModels } from './models/index.js';
 import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 import aboutRoutes from './routes/aboutRoutes.js';
 import activityRoutes from './routes/activityRoutes.js';
@@ -19,6 +20,7 @@ import mediaRoutes from './routes/mediaRoutes.js';
 import membershipRoutes from './routes/membershipRoutes.js';
 import membershipPageContentRoutes from './routes/membershipPageContentRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
+import chatbotRoutes from './routes/chatbotRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 
 dotenv.config();
@@ -86,13 +88,20 @@ app.use('/api/home-content', homeContentRoutes);
 app.use('/api/about', aboutRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
 
 const start = async () => {
   try {
-    await connectDb();
+    const sequelize = await connectDb();
+    initModels(sequelize);
+
+    // Sync tables (alter: true adds new columns without dropping data)
+    await sequelize.sync({ alter: true });
+    console.log('Database tables synced');
+
     configureCloudinary();
     await bootstrapAdmin();
 

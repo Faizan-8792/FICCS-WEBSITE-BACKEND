@@ -1,26 +1,77 @@
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
 
-const activitySchema = new mongoose.Schema(
-  {
-    type: {
-      type: String,
-      enum: ['academic', 'conference', 'research'],
-      required: true,
+let Activity;
+
+export const initActivity = (sequelize) => {
+  Activity = sequelize.define(
+    'Activity',
+    {
+      id: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      type: {
+        type: DataTypes.ENUM('academic', 'conference', 'research'),
+        allowNull: false,
+      },
+      title: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+      },
+      content: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      body: {
+        type: DataTypes.TEXT,
+        defaultValue: '',
+      },
+      image: {
+        type: DataTypes.STRING(500),
+        defaultValue: '',
+      },
+      date: {
+        type: DataTypes.DATE,
+        defaultValue: null,
+      },
+      location: {
+        type: DataTypes.STRING(255),
+        defaultValue: '',
+      },
+      highlights: {
+        type: DataTypes.JSON,
+        defaultValue: [],
+      },
+      registerUrl: {
+        type: DataTypes.STRING(500),
+        defaultValue: '',
+      },
+      registerLabel: {
+        type: DataTypes.STRING(255),
+        defaultValue: 'Register / Learn More',
+      },
+      membersOnlyContact: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+      },
+      contactWhatsappNumber: {
+        type: DataTypes.STRING(50),
+        defaultValue: '',
+      },
+      contactMessageTemplate: {
+        type: DataTypes.TEXT,
+        defaultValue: '',
+      },
     },
-    title: { type: String, required: true, trim: true },
-    content: { type: String, required: true, trim: true },
-    body: { type: String, default: '', trim: true },
-    image: { type: String, default: '' },
-    date: { type: Date, default: null },
-    location: { type: String, default: '', trim: true },
-    highlights: [{ type: String, trim: true }],
-    registerUrl: { type: String, default: '' },
-    registerLabel: { type: String, default: 'Register / Learn More', trim: true },
-    membersOnlyContact: { type: Boolean, default: true },
-    contactWhatsappNumber: { type: String, default: '', trim: true },
-    contactMessageTemplate: { type: String, default: '', trim: true },
-  },
-  { timestamps: true }
-);
+    {
+      tableName: 'activities',
+      timestamps: true,
+    }
+  );
 
-export default mongoose.model('Activity', activitySchema);
+  return Activity;
+};
+
+export const getActivity = () => Activity;
+export default null;

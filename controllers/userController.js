@@ -1,25 +1,28 @@
-import Activity from '../models/Activity.js';
-import Contact from '../models/Contact.js';
-import Event from '../models/Event.js';
-import Media from '../models/Media.js';
-import Membership from '../models/Membership.js';
-import User from '../models/User.js';
+import { getUser, getEvent, getActivity, getMedia as getMediaModel, getMembership, getContact } from '../models/index.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 
 export const getUsers = asyncHandler(async (req, res) => {
-  const users = await User.find().select('-password').sort({ createdAt: -1 });
+  const User = getUser();
+  const users = await User.findAll({
+    attributes: { exclude: ['password'] },
+    order: [['createdAt', 'DESC']],
+  });
   res.json(users);
 });
 
 export const getPendingUsers = asyncHandler(async (req, res) => {
-  const users = await User.find({ role: 'user', status: 'pending' })
-    .select('-password')
-    .sort({ createdAt: -1 });
+  const User = getUser();
+  const users = await User.findAll({
+    where: { role: 'user', status: 'pending' },
+    attributes: { exclude: ['password'] },
+    order: [['createdAt', 'DESC']],
+  });
   res.json(users);
 });
 
 export const approveUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const User = getUser();
+  const user = await User.findByPk(req.params.id);
 
   if (!user) {
     res.status(404);
@@ -38,7 +41,8 @@ export const approveUser = asyncHandler(async (req, res) => {
   res.json({
     message: 'User promoted to member',
     user: {
-      id: user._id,
+      _id: user.id,
+      id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
@@ -49,7 +53,8 @@ export const approveUser = asyncHandler(async (req, res) => {
 });
 
 export const revokeUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const User = getUser();
+  const user = await User.findByPk(req.params.id);
 
   if (!user) {
     res.status(404);
@@ -68,7 +73,8 @@ export const revokeUser = asyncHandler(async (req, res) => {
   res.json({
     message: 'Member status revoked',
     user: {
-      id: user._id,
+      _id: user.id,
+      id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
@@ -79,15 +85,26 @@ export const revokeUser = asyncHandler(async (req, res) => {
 });
 
 export const getDashboardOverview = asyncHandler(async (req, res) => {
+  const User = getUser();
+  const Event = getEvent();
+  const Activity = getActivity();
+  const Media = getMediaModel();
+  const Membership = getMembership();
+  const Contact = getContact();
+
   const [pendingUsers, events, activities, media, memberships, contacts, latestUsers] =
     await Promise.all([
-      User.countDocuments({ role: 'user', status: 'pending' }),
-      Event.countDocuments(),
-      Activity.countDocuments(),
-      Media.countDocuments(),
-      Membership.countDocuments(),
-      Contact.countDocuments(),
-      User.find().select('-password').sort({ createdAt: -1 }).limit(5),
+      User.count({ where: { role: 'user', status: 'pending' } }),
+      Event.count(),
+      Activity.count(),
+      Media.count(),
+      Membership.count(),
+      Contact.count(),
+      User.findAll({
+        attributes: { exclude: ['password'] },
+        order: [['createdAt', 'DESC']],
+        limit: 5,
+      }),
     ]);
 
   res.json({

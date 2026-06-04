@@ -4,6 +4,7 @@ export const notFound = (req, res, next) => {
   next(error);
 };
 
+// eslint-disable-next-line no-unused-vars
 export const errorHandler = (error, req, res, next) => {
   let statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
   let message = error.message || 'Internal server error';

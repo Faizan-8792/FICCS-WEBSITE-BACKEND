@@ -1,124 +1,57 @@
+/**
+ * Seed script — creates default content rows in MySQL if they don't exist.
+ * Usage: node scripts/seedAdminContent.js
+ *        node scripts/seedAdminContent.js --reset  (drops and re-creates)
+ */
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
-import { bootstrapAdmin } from '../config/bootstrapAdmin.js';
-import { connectDb } from '../config/db.js';
-import AboutContent from '../models/AboutContent.js';
-import Activity from '../models/Activity.js';
-import ContactPageContent from '../models/ContactPageContent.js';
-import Event from '../models/Event.js';
-import HomeContent from '../models/HomeContent.js';
-import Media from '../models/Media.js';
-import MembershipPageContent from '../models/MembershipPageContent.js';
-import {
-  defaultAboutContent,
-  defaultActivities,
-  defaultContactPageContent,
-  defaultEvents,
-  defaultHomeContent,
-  defaultMedia,
-  defaultMembershipPageContent,
-} from '../utils/defaultContent.js';
-
 dotenv.config();
 
-const shouldReset = process.argv.includes('--reset');
+import { connectDb } from '../config/db.js';
+import { initModels, getHomeContent, getAboutContent, getMembershipPageContent, getContactPageContent } from '../models/index.js';
+import { defaultHomeContent, defaultAboutContent, defaultMembershipPageContent, defaultContactPageContent } from '../utils/defaultContent.js';
 
-const seedSingleton = async (Model, defaults, label) => {
-  let doc = await Model.findOne();
+const reset = process.argv.includes('--reset');
 
-  if (!doc) {
-    await Model.create(defaults);
-    console.log(`  [ok] Seeded ${label}`);
-    return;
-  }
-
-  if (shouldReset) {
-    doc.set(defaults);
-    await doc.save();
-    console.log(`  [ok] Reset ${label}`);
-    return;
-  }
-
-  const plain = doc.toObject();
-  let needsSave = false;
-
-  for (const [key, value] of Object.entries(defaults)) {
-    if (!(key in plain) || plain[key] === undefined || plain[key] === null) {
-      doc.set(key, value);
-      needsSave = true;
-    }
-  }
-
-  if (needsSave) {
-    await doc.save();
-    console.log(`  [ok] Updated missing fields in ${label}`);
-    return;
-  }
-
-  console.log(`  [skip] ${label} already seeded`);
-};
-
-const seedCollection = async (Model, items, label) => {
-  if (shouldReset) {
-    await Model.deleteMany({});
-    if (items.length) {
-      await Model.insertMany(items);
-    }
-    console.log(`  [ok] Reset ${label}`);
-    return;
-  }
-
-  const count = await Model.countDocuments();
-  if (count === 0) {
-    await Model.insertMany(items);
-    console.log(`  [ok] Seeded ${label}`);
-    return;
-  }
-
-  console.log(`  [skip] ${label} already seeded (${count} docs)`);
-};
-
-const run = async () => {
-  console.log('\nFICCS Database Seed\n');
-  console.log(
-    shouldReset
-      ? 'Mode: RESET (overwrite existing)\n'
-      : 'Mode: INCREMENTAL (add missing only)\n'
-  );
-
+const seed = async () => {
   try {
-    await connectDb();
+    const sequelize = await connectDb();
+    initModels(sequelize);
+    await sequelize.sync({ alter: true });
 
-    console.log('--- Admin Account ---');
-    await bootstrapAdmin();
+    const HomeContent = getHomeContent();
+    const AboutContent = getAboutContent();
+    const MembershipPageContent = getMembershipPageContent();
+    const ContactPageContent = getContactPageContent();
 
-    console.log('\n--- Page Content ---');
-    await seedSingleton(HomeContent, defaultHomeContent, 'home content');
-    await seedSingleton(AboutContent, defaultAboutContent, 'about content');
-    await seedSingleton(
-      ContactPageContent,
-      defaultContactPageContent,
-      'contact page content'
-    );
-    await seedSingleton(
-      MembershipPageContent,
-      defaultMembershipPageContent,
-      'membership page content'
-    );
+    if (reset) {
+      await HomeContent.destroy({ where: {} });
+      await AboutContent.destroy({ where: {} });
+      await MembershipPageContent.destroy({ where: {} });
+      await ContactPageContent.destroy({ where: {} });
+      console.log('Cleared existing content.');
+    }
 
-    console.log('\n--- Collections ---');
-    await seedCollection(Event, defaultEvents, 'events');
-    await seedCollection(Activity, defaultActivities, 'activities');
-    await seedCollection(Media, defaultMedia, 'media');
+    const seedIfEmpty = async (Model, data, label) => {
+      const count = await Model.count();
+      if (count === 0) {
+        await Model.create(data);
+        console.log(`Seeded: ${label}`);
+      } else {
+        console.log(`Skipped (already exists): ${label}`);
+      }
+    };
 
-    console.log('\nSeed complete\n');
+    await seedIfEmpty(HomeContent, defaultHomeContent, 'HomeContent');
+    await seedIfEmpty(AboutContent, defaultAboutContent, 'AboutContent');
+    await seedIfEmpty(MembershipPageContent, defaultMembershipPageContent, 'MembershipPageContent');
+    await seedIfEmpty(ContactPageContent, defaultContactPageContent, 'ContactPageContent');
+
+    console.log('\nDone.');
     process.exit(0);
   } catch (error) {
-    console.error('\nSeed failed:', error);
+    console.error('Seed failed:', error);
     process.exit(1);
-  } finally {
-    await mongoose.disconnect();
   }
 };
 
-run();
+seed();

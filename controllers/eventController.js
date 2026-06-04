@@ -1,26 +1,29 @@
-import Event from '../models/Event.js';
+import { Op } from 'sequelize';
+import { getEvent } from '../models/index.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { defaultEvents } from '../utils/defaultContent.js';
 
-/** Seed default events when the collection is empty. */
 const seedIfEmpty = async () => {
-  const count = await Event.countDocuments();
+  const Event = getEvent();
+  const count = await Event.count();
   if (count === 0) {
-    await Event.insertMany(defaultEvents);
+    await Event.bulkCreate(defaultEvents);
   }
 };
 
 export const getEvents = asyncHandler(async (req, res) => {
+  const Event = getEvent();
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 15));
-  const skip = (page - 1) * limit;
+  const offset = (page - 1) * limit;
 
   await seedIfEmpty();
 
-  const [total, events] = await Promise.all([
-    Event.countDocuments(),
-    Event.find().sort({ date: 1 }).skip(skip).limit(limit),
-  ]);
+  const { count: total, rows: events } = await Event.findAndCountAll({
+    order: [['date', 'ASC']],
+    offset,
+    limit,
+  });
 
   res.json({
     events,
@@ -32,7 +35,8 @@ export const getEvents = asyncHandler(async (req, res) => {
 });
 
 export const getEventById = asyncHandler(async (req, res) => {
-  const event = await Event.findById(req.params.id);
+  const Event = getEvent();
+  const event = await Event.findByPk(req.params.id);
 
   if (!event) {
     res.status(404);
@@ -43,43 +47,58 @@ export const getEventById = asyncHandler(async (req, res) => {
 });
 
 export const getUpcomingEvents = asyncHandler(async (req, res) => {
+  const Event = getEvent();
   const limit = Math.min(20, Math.max(1, Number(req.query.limit) || 6));
 
   await seedIfEmpty();
 
-  const events = await Event.find({ date: { $gte: new Date() } })
-    .sort({ date: 1 })
-    .limit(limit);
+  const upcoming = await Event.findAll({
+    where: { date: { [Op.gte]: new Date() } },
+    order: [['date', 'ASC']],
+    limit,
+  });
 
-  res.json(events);
+  if (upcoming.length > 0) {
+    return res.json(upcoming);
+  }
+
+  const recentPast = await Event.findAll({
+    where: { date: { [Op.lt]: new Date() } },
+    order: [['date', 'DESC']],
+    limit,
+  });
+
+  res.json(recentPast);
 });
 
 export const createEvent = asyncHandler(async (req, res) => {
+  const Event = getEvent();
   const event = await Event.create(req.body);
   res.status(201).json(event);
 });
 
 export const updateEvent = asyncHandler(async (req, res) => {
-  const event = await Event.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
+  const Event = getEvent();
+  const event = await Event.findByPk(req.params.id);
 
   if (!event) {
     res.status(404);
     throw new Error('Event not found');
   }
 
+  await event.update(req.body);
   res.json(event);
 });
 
 export const deleteEvent = asyncHandler(async (req, res) => {
-  const event = await Event.findByIdAndDelete(req.params.id);
+  const Event = getEvent();
+  const event = await Event.findByPk(req.params.id);
 
   if (!event) {
     res.status(404);
     throw new Error('Event not found');
   }
 
+  await event.destroy();
   res.json({ message: 'Event deleted' });
 });

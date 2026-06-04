@@ -1,57 +1,31 @@
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
 
-const eligibilitySchema = new mongoose.Schema(
-  {
-    text: String,
-  },
-  { _id: false }
-);
+let MembershipPageContent;
 
-const benefitSchema = new mongoose.Schema(
-  {
-    icon: String,
-    title: String,
-    copy: String,
-  },
-  { _id: false }
-);
-
-const membershipStatSchema = new mongoose.Schema(
-  {
-    stat: String,
-    label: String,
-  },
-  { _id: false }
-);
-
-const membershipPageContentSchema = new mongoose.Schema(
-  {
-    heroEyebrow: String,
-    heroTitle: String,
-    heroCopy: String,
-    eligibilitySection: {
-      eyebrow: String,
-      heading: String,
-      description: String,
-      items: [eligibilitySchema],
+export const initMembershipPageContent = (sequelize) => {
+  MembershipPageContent = sequelize.define(
+    'MembershipPageContent',
+    {
+      id: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      heroEyebrow: { type: DataTypes.STRING(255), defaultValue: '' },
+      heroTitle: { type: DataTypes.STRING(255), defaultValue: '' },
+      heroCopy: { type: DataTypes.TEXT, defaultValue: '' },
+      eligibilitySection: { type: DataTypes.JSON, defaultValue: {} },
+      benefitsSection: { type: DataTypes.JSON, defaultValue: {} },
+      whyItMattersSection: { type: DataTypes.JSON, defaultValue: {} },
     },
-    benefitsSection: {
-      eyebrow: String,
-      heading: String,
-      description: String,
-      items: [benefitSchema],
-    },
-    whyItMattersSection: {
-      eyebrow: String,
-      heading: String,
-      description1: String,
-      description2: String,
-      ctaText: String,
-      ctaLink: String,
-      stats: [membershipStatSchema],
-    },
-  },
-  { timestamps: true }
-);
+    {
+      tableName: 'membership_page_content',
+      timestamps: true,
+    }
+  );
 
-export default mongoose.model('MembershipPageContent', membershipPageContentSchema);
+  return MembershipPageContent;
+};
+
+export const getMembershipPageContent = () => MembershipPageContent;
+export default null;

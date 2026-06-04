@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import { getUser } from '../models/index.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { uploadAsset } from '../utils/uploadAsset.js';
 
@@ -9,7 +9,8 @@ const signToken = (id) =>
   });
 
 const safeUser = (user) => ({
-  id: user._id,
+  _id: user.id,
+  id: user.id,
   name: user.name,
   email: user.email,
   role: user.role,
@@ -20,6 +21,7 @@ const safeUser = (user) => ({
 });
 
 export const signup = asyncHandler(async (req, res) => {
+  const User = getUser();
   const { name, password } = req.body;
   const email = String(req.body.email || '').trim().toLowerCase();
 
@@ -28,23 +30,22 @@ export const signup = asyncHandler(async (req, res) => {
     throw new Error('Name, email, and password are required');
   }
 
-  const existingUser = await User.findOne({ email });
+  const existingUser = await User.findOne({ where: { email } });
   if (existingUser) {
     res.status(400);
     throw new Error('An account with this email already exists.');
   }
 
-  // Create user — status defaults to 'pending' (not yet a member)
   const user = await User.create({ name: String(name).trim(), email, password });
 
-  // Issue JWT immediately — no approval gate for basic login
   res.status(201).json({
-    token: signToken(user._id),
+    token: signToken(user.id),
     user: safeUser(user),
   });
 });
 
 export const login = asyncHandler(async (req, res) => {
+  const User = getUser();
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -52,15 +53,14 @@ export const login = asyncHandler(async (req, res) => {
     throw new Error('Email and password are required');
   }
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ where: { email } });
   if (!user || !(await user.matchPassword(password))) {
     res.status(401);
     throw new Error('Invalid credentials');
   }
 
-  // All users with valid credentials can log in — no status gate
   res.json({
-    token: signToken(user._id),
+    token: signToken(user.id),
     user: safeUser(user),
   });
 });
@@ -70,7 +70,8 @@ export const getMe = asyncHandler(async (req, res) => {
 });
 
 export const updateProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
+  const User = getUser();
+  const user = await User.findByPk(req.user.id);
   if (!user) {
     res.status(404);
     throw new Error('User not found');
@@ -91,7 +92,6 @@ export const updateProfile = asyncHandler(async (req, res) => {
     user.bio = String(bio).trim().slice(0, 300);
   }
 
-  // Handle photo upload if file was sent
   if (req.file) {
     const url = await uploadAsset(req, 'ficcs-avatars');
     if (url) user.photo = url;
@@ -102,6 +102,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
 });
 
 export const changePassword = asyncHandler(async (req, res) => {
+  const User = getUser();
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
@@ -114,7 +115,7 @@ export const changePassword = asyncHandler(async (req, res) => {
     throw new Error('New password must be at least 6 characters');
   }
 
-  const user = await User.findById(req.user._id);
+  const user = await User.findByPk(req.user.id);
   if (!user) {
     res.status(404);
     throw new Error('User not found');

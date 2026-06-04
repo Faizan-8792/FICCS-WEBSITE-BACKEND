@@ -1,39 +1,79 @@
 import bcrypt from 'bcryptjs';
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
+import { getSequelize } from '../config/db.js';
 
-const userSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password: { type: String, required: true, minlength: 6 },
-    role: { type: String, enum: ['admin', 'user'], default: 'user' },
-    status: { type: String, enum: ['pending', 'approved'], default: 'pending' },
-    approvedAt: { type: Date, default: null },
-    photo: { type: String, default: '' },
-    bio: { type: String, default: '', maxlength: 300 },
-  },
-  { timestamps: true }
-);
+let User;
 
-userSchema.pre('save', async function savePassword() {
-  if (!this.isModified('password')) return;
-  if (typeof this.password === 'string' && this.password.startsWith('$2')) return;
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-});
+export const initUser = (sequelize) => {
+  User = sequelize.define(
+    'User',
+    {
+      id: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      name: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+      },
+      email: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        unique: true,
+      },
+      password: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+      },
+      role: {
+        type: DataTypes.ENUM('admin', 'user'),
+        defaultValue: 'user',
+      },
+      status: {
+        type: DataTypes.ENUM('pending', 'approved'),
+        defaultValue: 'pending',
+      },
+      approvedAt: {
+        type: DataTypes.DATE,
+        defaultValue: null,
+      },
+      photo: {
+        type: DataTypes.STRING(500),
+        defaultValue: '',
+      },
+      bio: {
+        type: DataTypes.STRING(300),
+        defaultValue: '',
+      },
+    },
+    {
+      tableName: 'users',
+      timestamps: true,
+      hooks: {
+        beforeCreate: async (user) => {
+          if (user.password && !user.password.startsWith('$2')) {
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(user.password, salt);
+          }
+        },
+        beforeUpdate: async (user) => {
+          if (user.changed('password') && !user.password.startsWith('$2')) {
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(user.password, salt);
+          }
+        },
+      },
+    }
+  );
 
-userSchema.methods.matchPassword = function matchPassword(enteredPassword) {
-  const storedPassword = this.password || this.get('passwordHash');
+  User.prototype.matchPassword = function matchPassword(enteredPassword) {
+    if (!enteredPassword || !this.password) return Promise.resolve(false);
+    return bcrypt.compare(enteredPassword, this.password);
+  };
 
-  if (
-    typeof enteredPassword !== 'string'
-    || typeof storedPassword !== 'string'
-    || !storedPassword
-  ) {
-    return false;
-  }
-
-  return bcrypt.compare(enteredPassword, storedPassword);
+  return User;
 };
 
-export default mongoose.model('User', userSchema);
+export const getUser = () => User;
+export default null; // Will be replaced after init

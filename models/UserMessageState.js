@@ -1,20 +1,55 @@
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
 
-/**
- * Tracks per-user read/dismissed state for broadcast messages.
- * One document per (user, message) pair.
- */
-const userMessageStateSchema = new mongoose.Schema(
-  {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    message: { type: mongoose.Schema.Types.ObjectId, ref: 'Message', required: true },
-    read: { type: Boolean, default: false },
-    dismissed: { type: Boolean, default: false }, // user deleted it from their view
-  },
-  { timestamps: true }
-);
+let UserMessageState;
 
-// Compound unique index — one state per user+message
-userMessageStateSchema.index({ user: 1, message: 1 }, { unique: true });
+export const initUserMessageState = (sequelize) => {
+  UserMessageState = sequelize.define(
+    'UserMessageState',
+    {
+      id: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      userId: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        allowNull: false,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+      },
+      messageId: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        allowNull: false,
+        references: {
+          model: 'messages',
+          key: 'id',
+        },
+      },
+      read: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+      dismissed: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+    },
+    {
+      tableName: 'user_message_states',
+      timestamps: true,
+      indexes: [
+        {
+          unique: true,
+          fields: ['userId', 'messageId'],
+        },
+      ],
+    }
+  );
 
-export default mongoose.model('UserMessageState', userMessageStateSchema);
+  return UserMessageState;
+};
+
+export const getUserMessageState = () => UserMessageState;
+export default null;

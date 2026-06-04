@@ -1,14 +1,45 @@
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
 
-const messageSchema = new mongoose.Schema(
-  {
-    title: { type: String, required: true, trim: true, maxlength: 200 },
-    body: { type: String, required: true, trim: true, maxlength: 2000 },
-    sentBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    // 'all' = broadcast to all approved users
-    audience: { type: String, enum: ['all'], default: 'all' },
-  },
-  { timestamps: true }
-);
+let Message;
 
-export default mongoose.model('Message', messageSchema);
+export const initMessage = (sequelize) => {
+  Message = sequelize.define(
+    'Message',
+    {
+      id: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      title: {
+        type: DataTypes.STRING(200),
+        allowNull: false,
+      },
+      body: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      sentBy: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        allowNull: false,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+      },
+      audience: {
+        type: DataTypes.ENUM('all'),
+        defaultValue: 'all',
+      },
+    },
+    {
+      tableName: 'messages',
+      timestamps: true,
+    }
+  );
+
+  return Message;
+};
+
+export const getMessage = () => Message;
+export default null;

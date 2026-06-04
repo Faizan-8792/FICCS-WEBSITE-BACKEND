@@ -1,105 +1,42 @@
-import mongoose from 'mongoose';
+import { DataTypes } from 'sequelize';
 
-const aboutFounderSchema = new mongoose.Schema(
-  {
-    name: String,
-    title: String,
-    description: String,
-    image: String,
-  },
-  { _id: false }
-);
+let AboutContent;
 
-const timelineSchema = new mongoose.Schema(
-  {
-    year: String,
-    title: String,
-    description: String,
-  },
-  { _id: false }
-);
+export const initAboutContent = (sequelize) => {
+  AboutContent = sequelize.define(
+    'AboutContent',
+    {
+      id: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      companyDescription: { type: DataTypes.TEXT, defaultValue: '' },
+      mission: { type: DataTypes.TEXT, defaultValue: '' },
+      founderNote: { type: DataTypes.TEXT, defaultValue: '' },
+      contactEmail: { type: DataTypes.STRING(255), defaultValue: '' },
+      contactPhone: { type: DataTypes.STRING(50), defaultValue: '' },
+      contactAddress: { type: DataTypes.TEXT, defaultValue: '' },
+      founders: { type: DataTypes.JSON, defaultValue: [] },
+      timeline: { type: DataTypes.JSON, defaultValue: [] },
+      whoWeAre: { type: DataTypes.JSON, defaultValue: {} },
+      whyItMatters: { type: DataTypes.JSON, defaultValue: {} },
+      intensivistRole: { type: DataTypes.JSON, defaultValue: {} },
+      visionMission: { type: DataTypes.JSON, defaultValue: {} },
+      standardsEthics: { type: DataTypes.JSON, defaultValue: {} },
+      collaboration: { type: DataTypes.JSON, defaultValue: {} },
+      commitment: { type: DataTypes.JSON, defaultValue: {} },
+      timelineSection: { type: DataTypes.JSON, defaultValue: {} },
+      foundersSection: { type: DataTypes.JSON, defaultValue: {} },
+    },
+    {
+      tableName: 'about_content',
+      timestamps: true,
+    }
+  );
 
-const iconItemSchema = new mongoose.Schema(
-  {
-    icon: String,
-    label: String,
-  },
-  { _id: false }
-);
+  return AboutContent;
+};
 
-const iconCardSchema = new mongoose.Schema(
-  {
-    icon: String,
-    title: String,
-    copy: String,
-  },
-  { _id: false }
-);
-
-const aboutContentSchema = new mongoose.Schema(
-  {
-    companyDescription: String,
-    mission: String,
-    founderNote: String,
-    contactEmail: String,
-    contactPhone: String,
-    contactAddress: String,
-    founders: [aboutFounderSchema],
-    timeline: [timelineSchema],
-    whoWeAre: {
-      eyebrow: String,
-      heading: String,
-      description: String,
-    },
-    whyItMatters: {
-      eyebrow: String,
-      heading: String,
-      description1: String,
-      description2: String,
-      items: [iconItemSchema],
-    },
-    intensivistRole: {
-      eyebrow: String,
-      heading: String,
-      description: String,
-      cards: [iconCardSchema],
-    },
-    visionMission: {
-      eyebrow: String,
-      heading: String,
-      description: String,
-      items: [iconItemSchema],
-    },
-    standardsEthics: {
-      eyebrow: String,
-      heading: String,
-      description1: String,
-      description2: String,
-      blockquote: String,
-      blockquoteFooter: String,
-    },
-    collaboration: {
-      eyebrow: String,
-      heading: String,
-      description: String,
-      items: [iconItemSchema],
-    },
-    commitment: {
-      heading: String,
-      description1: String,
-      description2: String,
-    },
-    timelineSection: {
-      eyebrow: String,
-      title: String,
-    },
-    foundersSection: {
-      eyebrow: String,
-      title: String,
-      copy: String,
-    },
-  },
-  { timestamps: true }
-);
-
-export default mongoose.model('AboutContent', aboutContentSchema);
+export const getAboutContent = () => AboutContent;
+export default null;

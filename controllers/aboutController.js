@@ -1,18 +1,19 @@
-import AboutContent from '../models/AboutContent.js';
+import { getAboutContent as getAboutContentModel } from '../models/index.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { defaultAboutContent } from '../utils/defaultContent.js';
 
 const getOrCreateAboutContent = async () => {
+  const AboutContent = getAboutContentModel();
   let content = await AboutContent.findOne();
 
   if (!content) {
     content = await AboutContent.create(defaultAboutContent);
   } else {
-    const plain = content.toObject();
     let needsSave = false;
+    const plain = content.toJSON();
     for (const [key, value] of Object.entries(defaultAboutContent)) {
-      if (!(key in plain) || plain[key] === undefined || plain[key] === null) {
-        content.set(key, value);
+      if (plain[key] === undefined || plain[key] === null || plain[key] === '') {
+        content[key] = value;
         needsSave = true;
       }
     }
@@ -29,7 +30,6 @@ export const getAboutContent = asyncHandler(async (req, res) => {
 
 export const updateAboutContent = asyncHandler(async (req, res) => {
   const content = await getOrCreateAboutContent();
-  Object.assign(content, req.body);
-  await content.save();
+  await content.update(req.body);
   res.json(content);
 });

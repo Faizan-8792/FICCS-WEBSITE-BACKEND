@@ -1,19 +1,19 @@
-import Contact from '../models/Contact.js';
-import ContactPageContent from '../models/ContactPageContent.js';
+import { getContact, getContactPageContent as getContactPageContentModel } from '../models/index.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { defaultContactPageContent } from '../utils/defaultContent.js';
 
 const getOrCreateContactPageContent = async () => {
+  const ContactPageContent = getContactPageContentModel();
   let content = await ContactPageContent.findOne();
 
   if (!content) {
     content = await ContactPageContent.create(defaultContactPageContent);
   } else {
-    const plain = content.toObject();
     let needsSave = false;
+    const plain = content.toJSON();
     for (const [key, value] of Object.entries(defaultContactPageContent)) {
-      if (!(key in plain) || plain[key] === undefined || plain[key] === null) {
-        content.set(key, value);
+      if (plain[key] === undefined || plain[key] === null || plain[key] === '') {
+        content[key] = value;
         needsSave = true;
       }
     }
@@ -24,6 +24,7 @@ const getOrCreateContactPageContent = async () => {
 };
 
 export const submitContact = asyncHandler(async (req, res) => {
+  const Contact = getContact();
   const { name, email, message } = req.body;
 
   if (!name || !email || !message) {
@@ -36,7 +37,8 @@ export const submitContact = asyncHandler(async (req, res) => {
 });
 
 export const getContacts = asyncHandler(async (req, res) => {
-  const contacts = await Contact.find().sort({ createdAt: -1 });
+  const Contact = getContact();
+  const contacts = await Contact.findAll({ order: [['createdAt', 'DESC']] });
   res.json(contacts);
 });
 
@@ -47,7 +49,6 @@ export const getContactPageContent = asyncHandler(async (req, res) => {
 
 export const updateContactPageContent = asyncHandler(async (req, res) => {
   const content = await getOrCreateContactPageContent();
-  Object.assign(content, req.body);
-  await content.save();
+  await content.update(req.body);
   res.json(content);
 });
