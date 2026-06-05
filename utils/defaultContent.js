@@ -268,7 +268,7 @@ export const defaultAboutContent = {
     eyebrow: 'Who We Are',
     heading: 'Forum of Intensivists and Critical Care Specialists',
     description:
-      'FICCS is a registered professional body of doctors dedicated to strengthening Critical Care Medicine as an independent and highly important super-specialty. Members are doctors who have completed NMC-recognized super-specialty training such as DM, DrNB, and FNB in Critical Care Medicine - qualifications that represent advanced and structured training in managing seriously ill patients in Intensive Care Units.',
+      'The Forum of Indian Critical Care Specialists (FICCS) is a professional body representing Intensivists who possess National Medical Commission (NMC)-recognized super-specialty qualifications in Critical Care Medicine, namely DM, DrNB, or FNB. FICCS is dedicated to advancing the standards of critical care practice, education, research, and patient safety across India through evidence-based medicine, ethical clinical practice, and the promotion of formally trained critical care specialists. The forum serves as a collective voice for qualified Intensivists and works towards strengthening critical care services, fostering academic excellence, and advocating for high-quality, standardized intensive care delivery for all critically ill patients.',
   },
   whyItMatters: {
     eyebrow: 'Why It Matters',
