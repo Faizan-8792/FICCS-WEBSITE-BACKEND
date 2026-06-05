@@ -73,12 +73,15 @@ export const submitContact = asyncHandler(async (req, res) => {
 
   const contact = await Contact.create({ name, email, message });
 
-  // Notify FICCS + project owner. Non-blocking: failures are logged inside
-  // sendMail and never affect the API response.
-  const content = await getOrCreateContactPageContent();
-  sendInquiryNotification({ name, email, message }, content?.officeEmail).catch((err) =>
-    console.error('[contact] notification error:', err.message)
-  );
+  // Notify FICCS + project owner. Fully non-blocking: any failure here
+  // (content lookup or mail send) must never turn a successful submission
+  // into an error response, otherwise users retry and create duplicates.
+  Promise.resolve()
+    .then(async () => {
+      const content = await getOrCreateContactPageContent();
+      await sendInquiryNotification({ name, email, message }, content?.officeEmail);
+    })
+    .catch((err) => console.error('[contact] notification error:', err.message));
 
   res.status(201).json(contact);
 });
