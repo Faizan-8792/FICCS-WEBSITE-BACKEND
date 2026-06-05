@@ -9,7 +9,8 @@
     "start": "node index.js",
     "seed": "node scripts/seedAdminContent.js",
     "seed:reset": "node scripts/seedAdminContent.js --reset",
-    "db:fix": "node scripts/dropStaleIndexes.js"
+    "db:fix": "node scripts/dropStaleIndexes.js",
+    "admin:reset": "node scripts/resetAdmin.js"
   },
   "keywords": [],
   "author": "",
