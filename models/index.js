@@ -30,6 +30,36 @@ export const initModels = (sequelize) => {
     };
   });
 
+  // Global hook: parse JSON columns that come back as raw strings.
+  // Hostinger runs MariaDB, where `DataTypes.JSON` maps to LONGTEXT and
+  // Sequelize does not auto-parse on read — so JSON fields arrive as strings
+  // (e.g. focusAreas, recentActivities). The frontend expects real arrays/
+  // objects and calls `.map()` on them, so we parse them back here centrally.
+  const parseJsonAttributes = (record) => {
+    if (!record || typeof record !== 'object') return;
+    const attributes = record.constructor?.rawAttributes;
+    if (!attributes || !record.dataValues) return;
+
+    for (const [key, definition] of Object.entries(attributes)) {
+      if (definition?.type?.key !== 'JSON') continue;
+      const value = record.dataValues[key];
+      if (typeof value !== 'string') continue;
+      try {
+        record.dataValues[key] = JSON.parse(value);
+      } catch {
+        // Leave non-parseable values untouched.
+      }
+    }
+  };
+
+  sequelize.addHook('afterFind', (result) => {
+    if (!result) return;
+    const records = Array.isArray(result) ? result : [result];
+    for (const record of records) {
+      parseJsonAttributes(record);
+    }
+  });
+
   // Initialize all models
   initUser(sequelize);
   initEvent(sequelize);
