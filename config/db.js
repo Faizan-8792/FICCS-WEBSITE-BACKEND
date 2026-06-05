@@ -16,13 +16,15 @@ export const connectDb = async () => {
   }
 
   // TEMPORARY DEBUG — remove after verifying Hostinger env vars
-  console.log('[DB DEBUG]', {
-    DB_HOST: host,
-    DB_PORT: port,
-    DB_NAME: database,
-    DB_USER: username,
-    DB_PASSWORD_LENGTH: password?.length,
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[DB DEBUG]', {
+      DB_HOST: host,
+      DB_PORT: port,
+      DB_NAME: database,
+      DB_USER: username,
+      DB_PASSWORD_LENGTH: password?.length,
+    });
+  }
 
   sequelize = new Sequelize(database, username, password, {
     host,
