@@ -1,45 +1,7 @@
 import { getContact, getContactPageContent as getContactPageContentModel } from '../models/index.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
-import { defaultContactPageContent, FICCS_INQUIRY_EMAIL } from '../utils/defaultContent.js';
-import { sendMail, getContactRecipients } from '../utils/mailer.js';
-
-// Project owner who should also receive every inquiry notification.
-const OWNER_NOTIFY_EMAIL = 'saifullahfaizan786@gmail.com';
-
-/**
- * Build the recipient list for inquiry notifications:
- *   - the live FICCS office email (from DB, falls back to default)
- *   - the project owner
- *   - any extra addresses configured via CONTACT_NOTIFY_EMAILS
- * Duplicates and empties are removed.
- */
-const resolveNotifyRecipients = (officeEmail) => {
-  const recipients = [
-    officeEmail || FICCS_INQUIRY_EMAIL,
-    OWNER_NOTIFY_EMAIL,
-    ...getContactRecipients(),
-  ];
-  return [...new Set(recipients.map((e) => e.trim().toLowerCase()).filter(Boolean))];
-};
-
-const sendInquiryNotification = async ({ name, email, message }, officeEmail) => {
-  const recipients = resolveNotifyRecipients(officeEmail);
-  const subject = `New FICCS inquiry from ${name}`;
-  const text =
-    `You received a new inquiry via the FICCS website.\n\n` +
-    `Name: ${name}\n` +
-    `Email: ${email}\n\n` +
-    `Message:\n${message}\n`;
-  const html =
-    `<h2>New FICCS website inquiry</h2>` +
-    `<p><strong>Name:</strong> ${name}</p>` +
-    `<p><strong>Email:</strong> ${email}</p>` +
-    `<p><strong>Message:</strong></p>` +
-    `<p style="white-space:pre-wrap">${message}</p>`;
-
-  // Non-blocking: never let mail issues break the submission.
-  await sendMail({ to: recipients, subject, text, html, replyTo: email });
-};
+import { defaultContactPageContent } from '../utils/defaultContent.js';
+import { sendInquiryViaFormSubmit } from '../utils/formSubmitNotify.js';
 
 const getOrCreateContactPageContent = async () => {
   const ContactPageContent = getContactPageContentModel();
@@ -73,13 +35,14 @@ export const submitContact = asyncHandler(async (req, res) => {
 
   const contact = await Contact.create({ name, email, message });
 
-  // Notify FICCS + project owner. Fully non-blocking: any failure here
-  // (content lookup or mail send) must never turn a successful submission
-  // into an error response, otherwise users retry and create duplicates.
+  // Notify FICCS + project owner via FormSubmit. Fully non-blocking: any
+  // failure here (content lookup or relay send) must never turn a successful
+  // submission into an error response, otherwise users retry and create
+  // duplicates.
   Promise.resolve()
     .then(async () => {
       const content = await getOrCreateContactPageContent();
-      await sendInquiryNotification({ name, email, message }, content?.officeEmail);
+      await sendInquiryViaFormSubmit({ name, email, message }, content?.officeEmail);
     })
     .catch((err) => console.error('[contact] notification error:', err.message));
 
