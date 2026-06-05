@@ -14,7 +14,7 @@
 
 export const FICCS_INQUIRY_NUMBER = '+919874892629';
 export const FICCS_INQUIRY_DISPLAY = '+91 98748 92629';
-export const FICCS_INQUIRY_EMAIL = 'ficcsindia@yahoo.com';
+export const FICCS_INQUIRY_EMAIL = 'Theficcs.india@gmail.com';
 
 const inquiryTemplate =
   'Hello FICCS Team, I am interested in "{title}" ({category}). Please share more details and the next steps.';

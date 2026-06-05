@@ -190,11 +190,11 @@ async function run() {
 
   const cpc = await ContactPageContent.create({
     headline: 'Get in Touch',
-    officeEmail: 'ficcsindia@yahoo.com',
+    officeEmail: 'Theficcs.india@gmail.com',
     officePhone: '+91 98748 92629',
   });
   assert(cpc.id > 0, 'ContactPageContent created');
-  assert(cpc.officeEmail === 'ficcsindia@yahoo.com', 'Fields correct');
+  assert(cpc.officeEmail === 'Theficcs.india@gmail.com', 'Fields correct');
 
   // ─── TEST 12: Bulk operations (used in controllers) ────────────────────
   console.log('\n📋 Test: Bulk operations');

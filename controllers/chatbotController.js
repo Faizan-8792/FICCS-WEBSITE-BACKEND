@@ -246,7 +246,7 @@ async function buildContact() {
   const contact = await ContactPageContent.findOne();
   const plain = contact ? contact.toJSON() : {};
   const phone = plain?.officePhone || '+91 98748 92629';
-  const email = plain?.officeEmail || 'ficcsindia@yahoo.com';
+  const email = plain?.officeEmail || 'Theficcs.india@gmail.com';
 
   return {
     text:
