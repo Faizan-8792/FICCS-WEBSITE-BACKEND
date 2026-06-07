@@ -15,28 +15,25 @@ export const connectDb = async () => {
     );
   }
 
-  // TEMPORARY DEBUG — remove after verifying Hostinger env vars
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[DB DEBUG]', {
-      DB_HOST: host,
-      DB_PORT: port,
-      DB_NAME: database,
-      DB_USER: username,
-      DB_PASSWORD_LENGTH: password?.length,
-    });
-  }
-
   sequelize = new Sequelize(database, username, password, {
     host,
     port: Number(port),
     dialect: 'mysql',
     logging: process.env.NODE_ENV === 'production' ? false : console.log,
+    // Hostinger shared MySQL caps concurrent connections per user (often 2-5).
+    // A high pool.max means connections can never be acquired, so queries wait
+    // forever and requests hang with no error. Keep the pool small and fail
+    // fast instead of hanging indefinitely.
     pool: {
-      max: 10,
+      max: 5,
       min: 0,
-      acquire: 30000,
+      acquire: 20000, // give up acquiring a connection after 20s (throws)
       idle: 10000,
     },
+    dialectOptions: {
+      connectTimeout: 20000, // fail the initial TCP/handshake after 20s
+    },
+    retry: { max: 1 },
   });
 
   try {
