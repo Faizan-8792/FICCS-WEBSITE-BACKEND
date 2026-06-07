@@ -46,7 +46,7 @@ Currently using MongoDB Atlas (cloud). Moving to Hostinger's built-in MySQL DB t
 - [x] **Task 4.1** — Update `middleware/authMiddleware.js` (user lookup)
 - [x] **Task 4.2** — Update `config/bootstrapAdmin.js`
 - [x] **Task 4.3** — Update `scripts/seedAdminContent.js`
-- [x] **Task 4.4** — Update `scripts/dropStaleIndexes.js` (no-op placeholder)
+- [x] **Task 4.4** — Update `scripts/dropStaleIndexes.js` (drops duplicate `users` indexes from repeated `sync({ alter: true })` runs — fixes "Too many keys specified; max 64 keys allowed"). Run via `npm run db:fix`.
 - [x] **Task 4.5** — Update `index.js` (startup: sequelize.sync + connect)
 
 ### Phase 5: Testing & Deployment
