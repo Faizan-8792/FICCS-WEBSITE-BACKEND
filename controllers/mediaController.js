@@ -5,11 +5,18 @@ import { uploadAsset } from '../utils/uploadAsset.js';
 
 export const getMedia = asyncHandler(async (req, res) => {
   const Media = getMediaModel();
-  let media = await Media.findAll({ order: [['createdAt', 'DESC']] });
+  const media = await Media.findAll({ order: [['createdAt', 'DESC']] });
+
   if (!media.length) {
-    await Media.bulkCreate(defaultMedia);
-    media = await Media.findAll({ order: [['createdAt', 'DESC']] });
+    // Respond with defaults immediately; seed in the background so a slow/
+    // failing write on a fresh DB can never hang the request.
+    res.json(defaultMedia);
+    Media.bulkCreate(defaultMedia).catch((err) =>
+      console.error('[media] background seed failed:', err.message)
+    );
+    return;
   }
+
   res.json(media);
 });
 

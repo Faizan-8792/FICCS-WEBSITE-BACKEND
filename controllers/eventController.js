@@ -11,19 +11,26 @@ const seedIfEmpty = async () => {
   }
 };
 
+// Fire-and-forget seed — never blocks a GET request. On a fresh DB where the
+// write is slow or lacks privileges, awaiting this would hang the request and
+// the host would kill the worker (ERR_CONNECTION_RESET).
+const seedInBackground = () => {
+  seedIfEmpty().catch((err) => console.error('[events] background seed failed:', err.message));
+};
+
 export const getEvents = asyncHandler(async (req, res) => {
   const Event = getEvent();
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 15));
   const offset = (page - 1) * limit;
 
-  await seedIfEmpty();
-
   const { count: total, rows: events } = await Event.findAndCountAll({
     order: [['date', 'ASC']],
     offset,
     limit,
   });
+
+  if (total === 0) seedInBackground();
 
   res.json({
     events,
@@ -50,8 +57,6 @@ export const getUpcomingEvents = asyncHandler(async (req, res) => {
   const Event = getEvent();
   const limit = Math.min(20, Math.max(1, Number(req.query.limit) || 6));
 
-  await seedIfEmpty();
-
   const upcoming = await Event.findAll({
     where: { date: { [Op.gte]: new Date() } },
     order: [['date', 'ASC']],
@@ -67,6 +72,8 @@ export const getUpcomingEvents = asyncHandler(async (req, res) => {
     order: [['date', 'DESC']],
     limit,
   });
+
+  if (recentPast.length === 0) seedInBackground();
 
   res.json(recentPast);
 });

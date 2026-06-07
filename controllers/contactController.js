@@ -55,8 +55,20 @@ export const getContacts = asyncHandler(async (req, res) => {
 });
 
 export const getContactPageContent = asyncHandler(async (req, res) => {
-  const content = await getOrCreateContactPageContent();
-  res.json(withContactDefaults(content.toJSON()));
+  const ContactPageContent = getContactPageContentModel();
+  const content = await ContactPageContent.findOne();
+
+  if (content) {
+    res.json(withContactDefaults(content.toJSON()));
+    return;
+  }
+
+  // No row yet — respond with defaults immediately, seed in the background so
+  // a slow/failing write on a fresh DB can never hang the request.
+  res.json(withContactDefaults({}));
+  ContactPageContent.findOne()
+    .then((row) => (row ? null : ContactPageContent.create(defaultContactPageContent)))
+    .catch((err) => console.error('[contact-content] background seed failed:', err.message));
 });
 
 export const updateContactPageContent = asyncHandler(async (req, res) => {

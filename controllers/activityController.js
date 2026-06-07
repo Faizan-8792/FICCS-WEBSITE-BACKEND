@@ -4,11 +4,18 @@ import { defaultActivities } from '../utils/defaultContent.js';
 
 export const getActivities = asyncHandler(async (req, res) => {
   const Activity = getActivity();
-  let activities = await Activity.findAll({ order: [['createdAt', 'DESC']] });
+  const activities = await Activity.findAll({ order: [['createdAt', 'DESC']] });
+
   if (!activities.length) {
-    await Activity.bulkCreate(defaultActivities);
-    activities = await Activity.findAll({ order: [['createdAt', 'DESC']] });
+    // Respond with defaults immediately; seed in the background so a slow/
+    // failing write on a fresh DB can never hang the request.
+    res.json(defaultActivities);
+    Activity.bulkCreate(defaultActivities).catch((err) =>
+      console.error('[activities] background seed failed:', err.message)
+    );
+    return;
   }
+
   res.json(activities);
 });
 

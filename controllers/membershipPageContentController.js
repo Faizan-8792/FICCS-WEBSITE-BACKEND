@@ -2,10 +2,6 @@ import { getMembershipPageContent as getMembershipPageContentModel } from '../mo
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { defaultMembershipPageContent } from '../utils/defaultContent.js';
 
-/**
- * Merge default values in-memory for empty/missing fields. Read-only — never
- * writes to the DB, so GET requests stay fast and cannot hang on save().
- */
 const withDefaults = (plain, defaults) => {
   const merged = { ...plain };
   for (const [key, value] of Object.entries(defaults)) {
@@ -16,22 +12,31 @@ const withDefaults = (plain, defaults) => {
   return merged;
 };
 
-const getMembershipPageContentRow = async () => {
+const ensureRowInBackground = (Model, defaults) => {
+  Model.findOne()
+    .then((row) => (row ? null : Model.create(defaults)))
+    .catch((err) => console.error('[membership-content] background seed failed:', err.message));
+};
+
+export const getMembershipPageContent = asyncHandler(async (req, res) => {
+  const MembershipPageContent = getMembershipPageContentModel();
+  const content = await MembershipPageContent.findOne();
+
+  if (content) {
+    res.json(withDefaults(content.toJSON(), defaultMembershipPageContent));
+    return;
+  }
+
+  res.json(withDefaults({}, defaultMembershipPageContent));
+  ensureRowInBackground(MembershipPageContent, defaultMembershipPageContent);
+});
+
+export const updateMembershipPageContent = asyncHandler(async (req, res) => {
   const MembershipPageContent = getMembershipPageContentModel();
   let content = await MembershipPageContent.findOne();
   if (!content) {
     content = await MembershipPageContent.create(defaultMembershipPageContent);
   }
-  return content;
-};
-
-export const getMembershipPageContent = asyncHandler(async (req, res) => {
-  const content = await getMembershipPageContentRow();
-  res.json(withDefaults(content.toJSON(), defaultMembershipPageContent));
-});
-
-export const updateMembershipPageContent = asyncHandler(async (req, res) => {
-  const content = await getMembershipPageContentRow();
   await content.update(req.body);
   res.json(content.toJSON());
 });
