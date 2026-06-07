@@ -98,8 +98,14 @@ const start = async () => {
     const sequelize = await connectDb();
     initModels(sequelize);
 
-    // Sync tables (alter: true adds new columns without dropping data)
-    await sequelize.sync({ alter: true });
+    // Sync tables. IMPORTANT: never use `alter: true` in production.
+    // On MariaDB, alter cannot detect existing UNIQUE indexes (e.g. users.email)
+    // and re-adds a duplicate index on every restart, eventually hitting MySQL's
+    // 64-key limit ("Too many keys specified") and crashing startup.
+    // In production we only create missing tables; schema changes are applied
+    // intentionally via migrations/scripts, not on every boot.
+    const syncOptions = process.env.NODE_ENV === 'production' ? {} : { alter: true };
+    await sequelize.sync(syncOptions);
     console.log('Database tables synced');
 
     configureCloudinary();
