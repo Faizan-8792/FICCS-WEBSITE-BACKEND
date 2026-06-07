@@ -124,13 +124,15 @@ const start = async () => {
     await sequelize.sync(syncOptions);
     console.log('Database tables synced');
 
-    // Start the HTTP server FIRST so the app is reachable immediately and
-    // health checks pass. Admin bootstrap / Cloudinary config must never block
-    // or delay listen() — a hang there previously prevented the server from
-    // binding, causing ERR_CONNECTION_RESET on the public domain.
+    // Start the HTTP server. Hostinger runs the app under Phusion Passenger,
+    // which patches listen() to bind to its OWN socket (it passes a value via
+    // process.env.PORT — sometimes a Unix socket PATH, not a numeric port).
+    // Passing an explicit host like '0.0.0.0' can break Passenger's socket
+    // binding (TCP connects but Passenger never bridges → TLS reset). So we
+    // listen with ONLY the port/socket value and no host argument.
     const port = process.env.PORT || 5000;
-    app.listen(port, '0.0.0.0', () => {
-      console.log(`Server listening on port ${port}`);
+    app.listen(port, () => {
+      console.log(`Server listening on ${port}`);
     });
 
     // Post-listen, best-effort setup. Failures are logged, not fatal.
