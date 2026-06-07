@@ -38,6 +38,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Tracks whether the background DB initialization has completed. Routes under
+// /api wait for this (return 503 until ready) so a request arriving during the
+// slow remote-MySQL connect never crashes on an uninitialized model.
+let dbReady = false;
 const parseAllowedOrigins = () => {
   const rawOrigins = [process.env.CLIENT_URLS, process.env.CLIENT_URL]
     .filter(Boolean)
@@ -90,13 +95,21 @@ app.use((req, res, next) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', dbReady, timestamp: new Date().toISOString() });
 });
 
 // Root route — LiteSpeed's cache crawler and uptime checks hit "/". Respond
 // 200 so it doesn't generate constant 404 noise in the logs.
 app.get('/', (req, res) => {
   res.json({ service: 'FICCS API', status: 'ok' });
+});
+
+// Readiness gate: until the background DB init finishes, model getters return
+// undefined and would crash a handler. Return a fast, retryable 503 instead of
+// letting the request hang/crash. Health and root stay available above.
+app.use('/api', (req, res, next) => {
+  if (dbReady) return next();
+  res.status(503).json({ message: 'Service starting, please retry in a moment.' });
 });
 
 app.use('/api/auth', authRoutes);
@@ -116,41 +129,36 @@ app.use(notFound);
 app.use(errorHandler);
 
 const start = async () => {
+  // Start the HTTP server IMMEDIATELY, before any DB work. Under Phusion
+  // Passenger (Hostinger), the app must call listen() quickly or Passenger
+  // kills the spawn and resets the connection at the TLS layer (TCP connects,
+  // TLS never completes — the exact ERR_CONNECTION_RESET symptom). Connecting
+  // to the REMOTE MySQL (srv1983.hstgr.io) is slow, so it must NOT gate listen.
+  const port = process.env.PORT || 5000;
+  app.listen(port, () => {
+    console.log(`Server listening on ${port}`);
+  });
+
+  // Initialize the database in the background. Routes that need models await
+  // the shared connection promise (see config/db.js). The server stays
+  // reachable (health, static, root) even while this is in progress.
   try {
     const sequelize = await connectDb();
     initModels(sequelize);
 
-    // Sync tables. IMPORTANT: never use `alter: true` in production.
-    // On MariaDB, alter cannot detect existing UNIQUE indexes (e.g. users.email)
-    // and re-adds a duplicate index on every restart, eventually hitting MySQL's
-    // 64-key limit ("Too many keys specified") and crashing startup.
-    // In production we only create missing tables; schema changes are applied
-    // intentionally via migrations/scripts, not on every boot.
+    // Never use alter:true in production — on MariaDB it re-adds the users.email
+    // unique index on every boot, eventually hitting MySQL's 64-key limit.
     const syncOptions = process.env.NODE_ENV === 'production' ? {} : { alter: true };
     await sequelize.sync(syncOptions);
     console.log('Database tables synced');
 
-    // Start the HTTP server. Hostinger runs the app under Phusion Passenger,
-    // which patches listen() to bind to its OWN socket (it passes a value via
-    // process.env.PORT — sometimes a Unix socket PATH, not a numeric port).
-    // Passing an explicit host like '0.0.0.0' can break Passenger's socket
-    // binding (TCP connects but Passenger never bridges → TLS reset). So we
-    // listen with ONLY the port/socket value and no host argument.
-    const port = process.env.PORT || 5000;
-    app.listen(port, () => {
-      console.log(`Server listening on ${port}`);
-    });
+    dbReady = true;
 
-    // Post-listen, best-effort setup. Failures are logged, not fatal.
-    try {
-      configureCloudinary();
-      await bootstrapAdmin();
-    } catch (setupError) {
-      console.error('[startup] post-listen setup error:', setupError.message);
-    }
+    configureCloudinary();
+    await bootstrapAdmin();
   } catch (error) {
-    console.error(error);
-    process.exit(1);
+    // Do NOT exit — keep the server up so the platform doesn't crash-loop.
+    console.error('[startup] database/init error:', error.message);
   }
 };
 
