@@ -108,13 +108,22 @@ const start = async () => {
     await sequelize.sync(syncOptions);
     console.log('Database tables synced');
 
-    configureCloudinary();
-    await bootstrapAdmin();
-
+    // Start the HTTP server FIRST so the app is reachable immediately and
+    // health checks pass. Admin bootstrap / Cloudinary config must never block
+    // or delay listen() — a hang there previously prevented the server from
+    // binding, causing ERR_CONNECTION_RESET on the public domain.
     const port = process.env.PORT || 5000;
-    app.listen(port, () => {
+    app.listen(port, '0.0.0.0', () => {
       console.log(`Server listening on port ${port}`);
     });
+
+    // Post-listen, best-effort setup. Failures are logged, not fatal.
+    try {
+      configureCloudinary();
+      await bootstrapAdmin();
+    } catch (setupError) {
+      console.error('[startup] post-listen setup error:', setupError.message);
+    }
   } catch (error) {
     console.error(error);
     process.exit(1);
