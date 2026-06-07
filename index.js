@@ -25,6 +25,15 @@ import userRoutes from './routes/userRoutes.js';
 
 dotenv.config();
 
+// Global safety nets — surface silent crashes in the Hostinger logs instead of
+// the process dying without a trace. These often reveal the real root cause.
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION:', err);
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -72,6 +81,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan('dev'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// TEMPORARY request logger — confirms requests reach the Node process (vs being
+// dropped by the Hostinger proxy). Remove once the connection issue is resolved.
+app.use((req, res, next) => {
+  console.log(`[req] ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

@@ -6,6 +6,10 @@ export const notFound = (req, res, next) => {
 
 // eslint-disable-next-line no-unused-vars
 export const errorHandler = (error, req, res, next) => {
+  // Always log the full error server-side so Hostinger logs reveal the cause.
+  console.error('EXPRESS ERROR:', req.method, req.originalUrl, '-', error.message);
+  console.error(error.stack);
+
   let statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
   let message = error.message || 'Internal server error';
 
