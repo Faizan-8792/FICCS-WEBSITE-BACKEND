@@ -6,22 +6,21 @@ import { sendInquiryViaFormSubmit } from '../utils/formSubmitNotify.js';
 const getOrCreateContactPageContent = async () => {
   const ContactPageContent = getContactPageContentModel();
   let content = await ContactPageContent.findOne();
-
   if (!content) {
     content = await ContactPageContent.create(defaultContactPageContent);
-  } else {
-    let needsSave = false;
-    const plain = content.toJSON();
-    for (const [key, value] of Object.entries(defaultContactPageContent)) {
-      if (plain[key] === undefined || plain[key] === null || plain[key] === '') {
-        content[key] = value;
-        needsSave = true;
-      }
-    }
-    if (needsSave) await content.save();
   }
-
   return content;
+};
+
+// Merge defaults in-memory for empty fields. Read-only — never writes on GET.
+const withContactDefaults = (plain) => {
+  const merged = { ...plain };
+  for (const [key, value] of Object.entries(defaultContactPageContent)) {
+    if (merged[key] === undefined || merged[key] === null || merged[key] === '') {
+      merged[key] = value;
+    }
+  }
+  return merged;
 };
 
 export const submitContact = asyncHandler(async (req, res) => {
@@ -57,7 +56,7 @@ export const getContacts = asyncHandler(async (req, res) => {
 
 export const getContactPageContent = asyncHandler(async (req, res) => {
   const content = await getOrCreateContactPageContent();
-  res.json(content);
+  res.json(withContactDefaults(content.toJSON()));
 });
 
 export const updateContactPageContent = asyncHandler(async (req, res) => {

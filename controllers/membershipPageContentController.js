@@ -2,34 +2,36 @@ import { getMembershipPageContent as getMembershipPageContentModel } from '../mo
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { defaultMembershipPageContent } from '../utils/defaultContent.js';
 
-const getOrCreateMembershipPageContent = async () => {
+/**
+ * Merge default values in-memory for empty/missing fields. Read-only — never
+ * writes to the DB, so GET requests stay fast and cannot hang on save().
+ */
+const withDefaults = (plain, defaults) => {
+  const merged = { ...plain };
+  for (const [key, value] of Object.entries(defaults)) {
+    if (merged[key] === undefined || merged[key] === null || merged[key] === '') {
+      merged[key] = value;
+    }
+  }
+  return merged;
+};
+
+const getMembershipPageContentRow = async () => {
   const MembershipPageContent = getMembershipPageContentModel();
   let content = await MembershipPageContent.findOne();
-
   if (!content) {
     content = await MembershipPageContent.create(defaultMembershipPageContent);
-  } else {
-    let needsSave = false;
-    const plain = content.toJSON();
-    for (const [key, value] of Object.entries(defaultMembershipPageContent)) {
-      if (plain[key] === undefined || plain[key] === null || plain[key] === '') {
-        content[key] = value;
-        needsSave = true;
-      }
-    }
-    if (needsSave) await content.save();
   }
-
   return content;
 };
 
 export const getMembershipPageContent = asyncHandler(async (req, res) => {
-  const content = await getOrCreateMembershipPageContent();
-  res.json(content);
+  const content = await getMembershipPageContentRow();
+  res.json(withDefaults(content.toJSON(), defaultMembershipPageContent));
 });
 
 export const updateMembershipPageContent = asyncHandler(async (req, res) => {
-  const content = await getOrCreateMembershipPageContent();
+  const content = await getMembershipPageContentRow();
   await content.update(req.body);
-  res.json(content);
+  res.json(content.toJSON());
 });

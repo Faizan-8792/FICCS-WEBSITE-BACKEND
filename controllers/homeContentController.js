@@ -2,41 +2,37 @@ import { getHomeContent as getHomeContentModel } from '../models/index.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { defaultHomeContent } from '../utils/defaultContent.js';
 
-const getOrCreateHomeContent = async () => {
-  const HomeContent = getHomeContentModel();
-  console.log('[home-content] STEP 1: findOne start');
-  let content = await HomeContent.findOne();
-  console.log('[home-content] STEP 2: findOne done, found =', Boolean(content));
-
-  if (!content) {
-    console.log('[home-content] STEP 3: creating default row');
-    content = await HomeContent.create(defaultHomeContent);
-    console.log('[home-content] STEP 4: created');
-  } else {
-    let needsSave = false;
-    const plain = content.toJSON();
-    for (const [key, value] of Object.entries(defaultHomeContent)) {
-      if (plain[key] === undefined || plain[key] === null || plain[key] === '') {
-        content[key] = value;
-        needsSave = true;
-      }
-    }
-    if (needsSave) {
-      console.log('[home-content] STEP 3b: saving backfilled defaults');
-      await content.save();
+/**
+ * Merge default values into a plain content object for empty/missing fields.
+ * This is read-only — it never writes to the DB, so GET requests stay fast and
+ * cannot hang on a save(). Admins persist real values via the update endpoint.
+ */
+const withDefaults = (plain, defaults) => {
+  const merged = { ...plain };
+  for (const [key, value] of Object.entries(defaults)) {
+    if (merged[key] === undefined || merged[key] === null || merged[key] === '') {
+      merged[key] = value;
     }
   }
+  return merged;
+};
 
+const getHomeContentRow = async () => {
+  const HomeContent = getHomeContentModel();
+  let content = await HomeContent.findOne();
+  if (!content) {
+    content = await HomeContent.create(defaultHomeContent);
+  }
   return content;
 };
 
 export const getHomeContent = asyncHandler(async (req, res) => {
-  const content = await getOrCreateHomeContent();
-  res.json(content);
+  const content = await getHomeContentRow();
+  res.json(withDefaults(content.toJSON(), defaultHomeContent));
 });
 
 export const updateHomeContent = asyncHandler(async (req, res) => {
-  const content = await getOrCreateHomeContent();
+  const content = await getHomeContentRow();
   await content.update(req.body);
-  res.json(content);
+  res.json(content.toJSON());
 });
