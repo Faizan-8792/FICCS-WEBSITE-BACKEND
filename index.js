@@ -93,6 +93,12 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Root route — LiteSpeed's cache crawler and uptime checks hit "/". Respond
+// 200 so it doesn't generate constant 404 noise in the logs.
+app.get('/', (req, res) => {
+  res.json({ service: 'FICCS API', status: 'ok' });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/activities', activityRoutes);
