@@ -10,7 +10,8 @@
     "seed": "node scripts/seedAdminContent.js",
     "seed:reset": "node scripts/seedAdminContent.js --reset",
     "db:fix": "node scripts/dropStaleIndexes.js",
-    "admin:reset": "node scripts/resetAdmin.js"
+    "admin:reset": "node scripts/resetAdmin.js",
+    "migrate:membership": "node scripts/migrateMembershipColumns.js"
   },
   "keywords": [],
   "author": "",

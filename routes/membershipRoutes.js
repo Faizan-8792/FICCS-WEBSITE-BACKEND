@@ -1,6 +1,9 @@
 import express from 'express';
 import {
+  approveMembershipDocuments,
+  approveMembershipPayment,
   getMemberships,
+  getMyMembership,
   submitMembership,
   updateMembershipStatus,
 } from '../controllers/membershipController.js';
@@ -16,8 +19,15 @@ const membershipUpload = upload.fields([
   { name: 'degreeCertificates', maxCount: 5 },
 ]);
 
-router.post('/', membershipUpload, submitMembership);
+// Applicant submits (protected so we can link the application to their account).
+router.post('/', protect, membershipUpload, submitMembership);
+// Applicant views their own application + approval stage.
+router.get('/mine', protect, getMyMembership);
+
+// Admin
 router.get('/', protect, adminOnly, getMemberships);
+router.patch('/:id/documents', protect, adminOnly, approveMembershipDocuments);
+router.patch('/:id/payment', protect, adminOnly, approveMembershipPayment);
 router.patch('/:id/status', protect, adminOnly, updateMembershipStatus);
 
 export default router;

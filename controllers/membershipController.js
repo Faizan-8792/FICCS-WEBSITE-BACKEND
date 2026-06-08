@@ -1,4 +1,4 @@
-import { getMembership } from '../models/index.js';
+import { getMembership, getUser } from '../models/index.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { uploadFile } from '../utils/uploadAsset.js';
 
@@ -40,6 +40,13 @@ const parseDegrees = (raw) => {
   }
   return [];
 };
+
+/**
+ * Applicant status is surfaced via GET /memberships/mine (the progress tracker
+ * on the My Membership page), which is per-user and always accurate. We avoid
+ * broadcast Messages here because the Message model is audience:'all' and would
+ * spam every member with one applicant's personal update.
+ */
 
 export const submitMembership = asyncHandler(async (req, res) => {
   const Membership = getMembership();
@@ -101,14 +108,20 @@ export const submitMembership = asyncHandler(async (req, res) => {
     mciCertificateUrl,
     govtIdUrls,
     degreeCertificateUrls,
+    // Link to the logged-in applicant when available (route is protected).
+    userId: req.user?.id || null,
     status: 'new',
+    documentStatus: 'pending',
+    paymentStatus: 'pending',
   });
 
   res.status(201).json({
     id: membership.id,
     status: membership.status,
+    documentStatus: membership.documentStatus,
+    paymentStatus: membership.paymentStatus,
     message:
-      'Application received. The FICCS team will review your details and reach out shortly.',
+      'Application received. The FICCS team will review your documents and reach out shortly.',
   });
 });
 
@@ -116,6 +129,85 @@ export const getMemberships = asyncHandler(async (req, res) => {
   const Membership = getMembership();
   const memberships = await Membership.findAll({ order: [['createdAt', 'DESC']] });
   res.json(memberships);
+});
+
+/**
+ * Applicant-facing: returns the logged-in user's latest membership application
+ * with its document/payment stage so the UI can render the progress tracker.
+ */
+export const getMyMembership = asyncHandler(async (req, res) => {
+  const Membership = getMembership();
+  const membership = await Membership.findOne({
+    where: { userId: req.user.id },
+    order: [['createdAt', 'DESC']],
+  });
+
+  if (!membership) {
+    return res.json({ exists: false });
+  }
+
+  res.json({ exists: true, ...membership.toJSON() });
+});
+
+// Promote the linked user account to an approved member once BOTH stages pass.
+const maybePromoteUser = async (membership) => {
+  if (
+    membership.documentStatus === 'approved' &&
+    membership.paymentStatus === 'approved' &&
+    membership.userId
+  ) {
+    const User = getUser();
+    const user = await User.findByPk(membership.userId);
+    if (user && user.role === 'user' && user.status !== 'approved') {
+      user.status = 'approved';
+      user.approvedAt = new Date();
+      await user.save();
+    }
+    membership.status = 'approved';
+    await membership.save();
+  }
+};
+
+export const approveMembershipDocuments = asyncHandler(async (req, res) => {
+  const Membership = getMembership();
+  const { decision } = req.body; // 'approved' | 'rejected'
+  if (!['approved', 'rejected'].includes(decision)) {
+    res.status(400);
+    throw new Error('decision must be "approved" or "rejected"');
+  }
+
+  const membership = await Membership.findByPk(req.params.id);
+  if (!membership) {
+    res.status(404);
+    throw new Error('Membership application not found');
+  }
+
+  membership.documentStatus = decision;
+  membership.status = decision === 'approved' ? 'reviewing' : 'rejected';
+  await membership.save();
+
+  await maybePromoteUser(membership);
+  res.json(membership);
+});
+
+export const approveMembershipPayment = asyncHandler(async (req, res) => {
+  const Membership = getMembership();
+  const membership = await Membership.findByPk(req.params.id);
+  if (!membership) {
+    res.status(404);
+    throw new Error('Membership application not found');
+  }
+
+  if (membership.documentStatus !== 'approved') {
+    res.status(400);
+    throw new Error('Approve the documents before confirming payment.');
+  }
+
+  membership.paymentStatus = 'approved';
+  await membership.save();
+  await maybePromoteUser(membership);
+
+  res.json(membership);
 });
 
 export const updateMembershipStatus = asyncHandler(async (req, res) => {

@@ -87,9 +87,27 @@ export const initMembership = (sequelize) => {
         type: DataTypes.TEXT,
         defaultValue: '',
       },
+      // Links the application to the logged-in user account that submitted it,
+      // so we can promote that user to member and show them their status.
+      userId: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        allowNull: true,
+        defaultValue: null,
+      },
+      // Overall lifecycle status (kept for backward compatibility / listing).
       status: {
         type: DataTypes.ENUM('new', 'reviewing', 'approved', 'rejected'),
         defaultValue: 'new',
+      },
+      // Stage 1 — admin reviews uploaded documents.
+      documentStatus: {
+        type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+        defaultValue: 'pending',
+      },
+      // Stage 2 — admin confirms payment (done off-platform via WhatsApp).
+      paymentStatus: {
+        type: DataTypes.ENUM('pending', 'approved'),
+        defaultValue: 'pending',
       },
     },
     {
