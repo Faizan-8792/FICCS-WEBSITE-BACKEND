@@ -43,6 +43,16 @@ const app = express();
 // /api wait for this (return 503 until ready) so a request arriving during the
 // slow remote-MySQL connect never crashes on an uninitialized model.
 let dbReady = false;
+// Resolves when background DB init completes (or rejects on failure). The /api
+// readiness gate awaits this so the first request on a fresh worker doesn't 503.
+let resolveReady;
+let rejectReady;
+const readyPromise = new Promise((resolve, reject) => {
+  resolveReady = resolve;
+  rejectReady = reject;
+});
+// Prevent an unhandled rejection warning if init fails before any request awaits.
+readyPromise.catch(() => {});
 const parseAllowedOrigins = () => {
   const rawOrigins = [process.env.CLIENT_URLS, process.env.CLIENT_URL]
     .filter(Boolean)
@@ -105,10 +115,21 @@ app.get('/', (req, res) => {
 });
 
 // Readiness gate: until the background DB init finishes, model getters return
-// undefined and would crash a handler. Return a fast, retryable 503 instead of
-// letting the request hang/crash. Health and root stay available above.
-app.use('/api', (req, res, next) => {
+// undefined and would crash a handler. Instead of instantly 503-ing (which
+// caused the first request on a freshly-spawned Passenger worker to fail),
+// WAIT for the init promise to resolve, then continue. Only 503 if init truly
+// fails or takes unreasonably long.
+app.use('/api', async (req, res, next) => {
   if (dbReady) return next();
+  try {
+    await Promise.race([
+      readyPromise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000)),
+    ]);
+    if (dbReady) return next();
+  } catch {
+    // fall through to 503
+  }
   res.status(503).json({ message: 'Service starting, please retry in a moment.' });
 });
 
@@ -153,12 +174,14 @@ const start = async () => {
     console.log('Database tables synced');
 
     dbReady = true;
+    resolveReady();
 
     configureCloudinary();
     await bootstrapAdmin();
   } catch (error) {
     // Do NOT exit — keep the server up so the platform doesn't crash-loop.
     console.error('[startup] database/init error:', error.message);
+    rejectReady(error);
   }
 };
 

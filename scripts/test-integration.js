@@ -108,6 +108,30 @@ async function run() {
   await membership.update({ status: 'approved' });
   assert(membership.status === 'approved', 'Status update works');
 
+  // ─── TEST 5b: Two-stage membership approval fields ────────────────────
+  console.log('\n📋 Test: Two-stage membership approval');
+  const app2 = await Membership.create({
+    name: 'Dr. Stage',
+    email: 'stage@test.com',
+    mobile: '+91 90000 00000',
+    degrees: ['MBBS', 'MD'],
+    userId: user.id,
+  });
+  assert(app2.documentStatus === 'pending', 'documentStatus defaults to "pending"');
+  assert(app2.paymentStatus === 'pending', 'paymentStatus defaults to "pending"');
+  assert(app2.userId === user.id, 'userId links application to account');
+
+  await app2.update({ documentStatus: 'approved' });
+  assert(app2.documentStatus === 'approved', 'documentStatus -> approved');
+  assert(app2.paymentStatus === 'pending', 'payment still pending after doc approval');
+
+  await app2.update({ paymentStatus: 'approved' });
+  const bothApproved = app2.documentStatus === 'approved' && app2.paymentStatus === 'approved';
+  assert(bothApproved, 'both stages approved → eligible for member promotion');
+
+  const mine = await Membership.findOne({ where: { userId: user.id }, order: [['createdAt', 'DESC']] });
+  assert(mine && mine.userId === user.id, 'getMyMembership query (by userId) returns the application');
+
   // ─── TEST 6: Message + UserMessageState (associations) ────────────────
   console.log('\n📋 Test: Message + UserMessageState (associations)');
   const Message = getMessage();
