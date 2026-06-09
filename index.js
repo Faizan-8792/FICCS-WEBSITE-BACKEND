@@ -9,6 +9,7 @@ import { bootstrapAdmin } from './config/bootstrapAdmin.js';
 import { configureCloudinary } from './config/cloudinary.js';
 import { connectDb, getSequelize } from './config/db.js';
 import { initModels } from './models/index.js';
+import { ensureMembershipColumns } from './scripts/migrateMembershipColumns.js';
 import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 import aboutRoutes from './routes/aboutRoutes.js';
 import activityRoutes from './routes/activityRoutes.js';
@@ -172,6 +173,17 @@ const start = async () => {
     const syncOptions = process.env.NODE_ENV === 'production' ? {} : { alter: true };
     await sequelize.sync(syncOptions);
     console.log('Database tables synced');
+
+    // Self-healing migration: production sync uses {} (no alter), so columns
+    // added to models after the table already exists are NOT auto-created.
+    // Backfill the membership two-stage columns (userId, documentStatus,
+    // paymentStatus) here so deploys don't require a manual migration step.
+    // Idempotent — only adds what's missing.
+    try {
+      await ensureMembershipColumns(sequelize);
+    } catch (migrationError) {
+      console.error('[startup] membership column migration failed:', migrationError.message);
+    }
 
     dbReady = true;
     resolveReady();
