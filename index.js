@@ -10,6 +10,8 @@ import { configureCloudinary } from './config/cloudinary.js';
 import { connectDb, getSequelize } from './config/db.js';
 import { initModels } from './models/index.js';
 import { ensureMembershipColumns } from './scripts/migrateMembershipColumns.js';
+import { ensureMessageColumns } from './scripts/migrateMessageColumns.js';
+import { ensureUserColumns } from './scripts/migrateUserColumns.js';
 import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 import aboutRoutes from './routes/aboutRoutes.js';
 import activityRoutes from './routes/activityRoutes.js';
@@ -183,6 +185,18 @@ const start = async () => {
       await ensureMembershipColumns(sequelize);
     } catch (migrationError) {
       console.error('[startup] membership column migration failed:', migrationError.message);
+    }
+
+    try {
+      await ensureMessageColumns(sequelize);
+    } catch (migrationError) {
+      console.error('[startup] message column migration failed:', migrationError.message);
+    }
+
+    try {
+      await ensureUserColumns(sequelize);
+    } catch (migrationError) {
+      console.error('[startup] user column migration failed:', migrationError.message);
     }
 
     dbReady = true;

@@ -34,6 +34,13 @@ export const initUser = (sequelize) => {
         type: DataTypes.ENUM('pending', 'approved'),
         defaultValue: 'pending',
       },
+      // Unique FICCS membership code assigned by admin on/after approval,
+      // format FICCS-YYYY-NN (e.g. FICCS-2026-01). Null until assigned.
+      memberCode: {
+        type: DataTypes.STRING(40),
+        allowNull: true,
+        defaultValue: null,
+      },
       approvedAt: {
         type: DataTypes.DATE,
         defaultValue: null,

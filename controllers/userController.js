@@ -1,4 +1,5 @@
 import { getUser, getEvent, getActivity, getMedia as getMediaModel, getMembership, getContact } from '../models/index.js';
+import { Op } from 'sequelize';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 
 export const getUsers = asyncHandler(async (req, res) => {
@@ -47,6 +48,7 @@ export const approveUser = asyncHandler(async (req, res) => {
       email: user.email,
       role: user.role,
       status: user.status,
+      memberCode: user.memberCode,
       approvedAt: user.approvedAt,
     },
   });
@@ -82,6 +84,84 @@ export const revokeUser = asyncHandler(async (req, res) => {
       approvedAt: user.approvedAt,
     },
   });
+});
+
+/**
+ * Assign (or update) a member's FICCS code. Validates format FICCS-YYYY-NN and
+ * enforces uniqueness across users. Admin-only.
+ */
+export const assignMemberCode = asyncHandler(async (req, res) => {
+  const User = getUser();
+  const { memberCode } = req.body;
+  const code = String(memberCode || '').trim().toUpperCase();
+
+  if (!/^FICCS-\d{4}-\d{2,}$/.test(code)) {
+    res.status(400);
+    throw new Error('Code must look like FICCS-2026-01');
+  }
+
+  const user = await User.findByPk(req.params.id);
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  // Enforce uniqueness — no two members share a code.
+  const clash = await User.findOne({
+    where: { memberCode: code, id: { [Op.ne]: user.id } },
+  });
+  if (clash) {
+    res.status(409);
+    throw new Error(`Code ${code} is already assigned to ${clash.name}`);
+  }
+
+  user.memberCode = code;
+  await user.save();
+
+  res.json({
+    message: 'Member code assigned',
+    user: { _id: user.id, id: user.id, name: user.name, memberCode: user.memberCode },
+  });
+});
+
+/**
+ * Remove all assigned member codes (clears the code registry / history).
+ * This does NOT delete user accounts or revoke membership — it only wipes the
+ * `memberCode` field on every user so codes can be re-issued. Reversible by
+ * re-assigning. Admin-only.
+ */
+export const clearAllMemberCodes = asyncHandler(async (req, res) => {
+  const User = getUser();
+  const [affected] = await User.update(
+    { memberCode: null },
+    { where: { memberCode: { [Op.ne]: null } } }
+  );
+  res.json({ message: 'Member code history cleared', cleared: affected });
+});
+
+/**
+ * Suggest the next available member code for the current year, format
+ * FICCS-YYYY-NN. Scans existing codes for the year and returns max+1.
+ */
+export const suggestMemberCode = asyncHandler(async (req, res) => {
+  const User = getUser();
+  const year = new Date().getFullYear();
+  const prefix = `FICCS-${year}-`;
+
+  const users = await User.findAll({
+    where: { memberCode: { [Op.like]: `${prefix}%` } },
+    attributes: ['memberCode'],
+  });
+
+  let max = 0;
+  for (const u of users) {
+    const tail = String(u.memberCode).slice(prefix.length);
+    const n = parseInt(tail, 10);
+    if (Number.isInteger(n) && n > max) max = n;
+  }
+
+  const next = String(max + 1).padStart(2, '0');
+  res.json({ suggestion: `${prefix}${next}`, year, nextNumber: max + 1 });
 });
 
 export const getDashboardOverview = asyncHandler(async (req, res) => {

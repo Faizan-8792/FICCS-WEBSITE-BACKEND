@@ -28,8 +28,14 @@ export const initMessage = (sequelize) => {
         },
       },
       audience: {
-        type: DataTypes.ENUM('all'),
+        type: DataTypes.ENUM('all', 'members', 'selective'),
         defaultValue: 'all',
+      },
+      // When audience === 'selective', the list of target user ids. Empty/null
+      // for 'all' and 'members'.
+      recipientIds: {
+        type: DataTypes.JSON,
+        defaultValue: [],
       },
     },
     {

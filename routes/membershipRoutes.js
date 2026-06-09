@@ -2,6 +2,8 @@ import express from 'express';
 import {
   approveMembershipDocuments,
   approveMembershipPayment,
+  deleteAllMemberships,
+  deleteMembership,
   getMemberships,
   getMyMembership,
   submitMembership,
@@ -29,5 +31,9 @@ router.get('/', protect, adminOnly, getMemberships);
 router.patch('/:id/documents', protect, adminOnly, approveMembershipDocuments);
 router.patch('/:id/payment', protect, adminOnly, approveMembershipPayment);
 router.patch('/:id/status', protect, adminOnly, updateMembershipStatus);
+// Destructive: permanently remove applications. `/all` is declared before
+// `/:id` so it isn't captured as an id param.
+router.delete('/all', protect, adminOnly, deleteAllMemberships);
+router.delete('/:id', protect, adminOnly, deleteMembership);
 
 export default router;

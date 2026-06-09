@@ -11,7 +11,11 @@
     "seed:reset": "node scripts/seedAdminContent.js --reset",
     "db:fix": "node scripts/dropStaleIndexes.js",
     "admin:reset": "node scripts/resetAdmin.js",
-    "migrate:membership": "node scripts/migrateMembershipColumns.js"
+    "migrate:membership": "node scripts/migrateMembershipColumns.js",
+    "migrate:messages": "node scripts/migrateMessageColumns.js",
+    "migrate:users": "node scripts/migrateUserColumns.js",
+    "seed:members": "node scripts/seedDemoMembers.js",
+    "check:docs": "node scripts/checkMembershipDocs.js"
   },
   "keywords": [],
   "author": "",

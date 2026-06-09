@@ -229,3 +229,31 @@ export const updateMembershipStatus = asyncHandler(async (req, res) => {
   await membership.update({ status });
   res.json(membership);
 });
+
+/**
+ * Permanently delete a single membership application. This removes the record
+ * entirely (not a status change) — used by the admin to purge an entry from
+ * every listing. Irreversible.
+ */
+export const deleteMembership = asyncHandler(async (req, res) => {
+  const Membership = getMembership();
+  const membership = await Membership.findByPk(req.params.id);
+
+  if (!membership) {
+    res.status(404);
+    throw new Error('Membership application not found');
+  }
+
+  await membership.destroy();
+  res.json({ id: Number(req.params.id), deleted: true });
+});
+
+/**
+ * Permanently delete ALL membership applications. Irreversible bulk purge —
+ * admin-only. Returns the number of rows removed.
+ */
+export const deleteAllMemberships = asyncHandler(async (req, res) => {
+  const Membership = getMembership();
+  const deleted = await Membership.destroy({ where: {}, truncate: false });
+  res.json({ deleted });
+});
