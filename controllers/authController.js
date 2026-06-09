@@ -30,6 +30,17 @@ export const signup = asyncHandler(async (req, res) => {
     throw new Error('Name, email, and password are required');
   }
 
+  if (String(password).length < 8) {
+    res.status(400);
+    throw new Error('Password must be at least 8 characters');
+  }
+
+  // Basic email shape check — cheap guard before hitting the DB.
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    res.status(400);
+    throw new Error('Please enter a valid email address');
+  }
+
   const existingUser = await User.findOne({ where: { email } });
   if (existingUser) {
     res.status(400);
@@ -110,9 +121,9 @@ export const changePassword = asyncHandler(async (req, res) => {
     throw new Error('Current and new password are required');
   }
 
-  if (String(newPassword).length < 6) {
+  if (String(newPassword).length < 8) {
     res.status(400);
-    throw new Error('New password must be at least 6 characters');
+    throw new Error('New password must be at least 8 characters');
   }
 
   const user = await User.findByPk(req.user.id);

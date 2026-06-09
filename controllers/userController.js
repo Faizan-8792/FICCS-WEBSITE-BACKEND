@@ -140,6 +140,18 @@ export const clearAllMemberCodes = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Permanently delete ALL member records (approved non-admin user accounts).
+ * Destructive + irreversible. Admin accounts are never touched. Admin-only.
+ */
+export const deleteAllMembers = asyncHandler(async (req, res) => {
+  const User = getUser();
+  const deleted = await User.destroy({
+    where: { role: 'user', status: 'approved' },
+  });
+  res.json({ message: 'All member records deleted', deleted });
+});
+
+/**
  * Suggest the next available member code for the current year, format
  * FICCS-YYYY-NN. Scans existing codes for the year and returns max+1.
  */

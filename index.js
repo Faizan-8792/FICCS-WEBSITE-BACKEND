@@ -1,7 +1,10 @@
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import express from 'express';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -41,6 +44,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Behind Hostinger's LiteSpeed/Passenger proxy. Trust it so req.ip and
+// express-rate-limit see the real client IP (via X-Forwarded-For) instead of
+// the proxy's, otherwise all users share one rate-limit bucket.
+app.set('trust proxy', 1);
+
+// Security headers (CSP disabled here because the SPA is served from a separate
+// origin; API responses are JSON). HSTS + sniff/frame protections stay on.
+app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
+// Gzip responses — large JSON payloads (content blobs, member lists) ship
+// smaller, cutting bandwidth and time-to-first-byte under load.
+app.use(compression());
 
 // Tracks whether the background DB initialization has completed. Routes under
 // /api wait for this (return 503 until ready) so a request arriving during the
@@ -97,14 +113,28 @@ app.use(
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(morgan('dev'));
+// Concise logs in production, verbose in dev.
+app.use(morgan(isDevMode ? 'dev' : 'combined'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// TEMPORARY request logger — confirms requests reach the Node process (vs being
-// dropped by the Hostinger proxy). Remove once the connection issue is resolved.
-app.use((req, res, next) => {
-  console.log(`[req] ${req.method} ${req.originalUrl}`);
-  next();
+// Global API rate limit — blunt protection against scraping / abuse / accidental
+// floods. Generous enough for normal SPA browsing (many GETs per page view).
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 300, // 300 req/min per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests, please slow down.' },
+});
+
+// Strict limiter for auth — defends against credential stuffing / brute force.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20, // 20 attempts / 15 min per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // only count failed logins toward the limit
+  message: { message: 'Too many attempts. Try again in a few minutes.' },
 });
 
 app.get('/api/health', (req, res) => {
@@ -136,7 +166,11 @@ app.use('/api', async (req, res, next) => {
   res.status(503).json({ message: 'Service starting, please retry in a moment.' });
 });
 
-app.use('/api/auth', authRoutes);
+// Apply the global rate limiter to all API routes (after the readiness gate so
+// 503s during startup don't consume a user's quota).
+app.use('/api', apiLimiter);
+
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/media', mediaRoutes);

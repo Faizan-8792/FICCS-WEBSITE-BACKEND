@@ -9,32 +9,52 @@ export const errorHandler = (error, req, res, next) => {
   let statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
   let message = error.message || 'Internal server error';
 
-  // Only log real server-side failures (5xx) with a stack. 4xx (e.g. 404 from
-  // LiteSpeed's cache crawler hitting "/") are normal and would otherwise spam
-  // the logs and hide genuine crashes.
+  // Sequelize unique-constraint violation (e.g. duplicate email).
+  if (error.name === 'SequelizeUniqueConstraintError') {
+    statusCode = 409;
+    const field = error.errors?.[0]?.path;
+    message =
+      field === 'email'
+        ? 'An account with this email already exists.'
+        : 'That value is already in use.';
+  }
+
+  // Sequelize validation errors.
+  if (error.name === 'SequelizeValidationError') {
+    statusCode = 400;
+    message = error.errors?.map((e) => e.message).join(', ') || 'Validation failed';
+  }
+
+  // DB connectivity / pool exhaustion under load — tell the client to retry.
+  if (
+    error.name === 'SequelizeConnectionError' ||
+    error.name === 'SequelizeConnectionAcquireTimeoutError' ||
+    error.name === 'SequelizeConnectionRefusedError'
+  ) {
+    statusCode = 503;
+    message = 'Service temporarily busy. Please retry in a moment.';
+  }
+
+  // Invalid / expired JWT.
+  if (error.name === 'JsonWebTokenError') {
+    statusCode = 401;
+    message = 'Invalid authentication token.';
+  }
+  if (error.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Session expired. Please sign in again.';
+  }
+
+  // Log genuine server-side failures only (5xx). 4xx are normal client errors.
   if (statusCode >= 500) {
     console.error('EXPRESS ERROR:', req.method, req.originalUrl, '-', error.message);
     console.error(error.stack);
   }
 
-  // MongoDB duplicate key error (E11000)
-  if (error.code === 11000) {
-    statusCode = 400;
-    const field = Object.keys(error.keyValue || {})[0];
-    if (field === 'email') {
-      message = 'An account with this email already exists.';
-    } else if (field && field !== 'username') {
-      message = `${field} already exists.`;
-    } else {
-      // Stale index on a removed field (e.g. username) — treat as generic conflict
-      message = 'Account could not be created. Please try again.';
-    }
-  }
-
-  // Mongoose validation error
-  if (error.name === 'ValidationError') {
-    statusCode = 400;
-    message = Object.values(error.errors).map((e) => e.message).join(', ');
+  // Never leak an unexpected 500's raw message to the client in production —
+  // it can expose internals. Use a generic message; full detail stays in logs.
+  if (statusCode >= 500 && process.env.NODE_ENV === 'production') {
+    message = 'Internal server error';
   }
 
   res.status(statusCode).json({
