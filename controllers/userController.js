@@ -234,6 +234,42 @@ export const clearAllMemberCodes = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Bulk auto-assign sequential FICCS codes to every approved member, numbered
+ * from 01 in join order (approvedAt, then id). Existing member codes are
+ * re-issued from scratch so the registry is clean and contiguous. Admin
+ * accounts are never touched. Admin-only.
+ */
+export const autoAssignMemberCodes = asyncHandler(async (req, res) => {
+  const User = getUser();
+  const year = new Date().getFullYear();
+  const prefix = `FICCS-${year}-`;
+
+  const members = await User.findAll({
+    where: { role: 'user', status: 'approved' },
+    order: [
+      ['approvedAt', 'ASC'],
+      ['id', 'ASC'],
+    ],
+  });
+
+  // Clear the member set's codes first so re-numbering can reuse the range
+  // without colliding with their own previous codes.
+  await User.update(
+    { memberCode: null },
+    { where: { role: 'user', status: 'approved' } }
+  );
+
+  let n = 0;
+  for (const m of members) {
+    n += 1;
+    m.memberCode = `${prefix}${String(n).padStart(2, '0')}`;
+    await m.save();
+  }
+
+  res.json({ message: 'Member codes auto-assigned', assigned: n, year });
+});
+
+/**
  * Permanently delete ALL member records (approved non-admin user accounts).
  * Destructive + irreversible. Admin accounts are never touched. Admin-only.
  */
