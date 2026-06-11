@@ -15,7 +15,8 @@
     "migrate:messages": "node scripts/migrateMessageColumns.js",
     "migrate:users": "node scripts/migrateUserColumns.js",
     "seed:members": "node scripts/seedDemoMembers.js",
-    "check:docs": "node scripts/checkMembershipDocs.js"
+    "check:docs": "node scripts/checkMembershipDocs.js",
+    "drive:token": "node scripts/getDriveToken.js"
   },
   "keywords": [],
   "author": "",
