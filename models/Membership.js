@@ -83,6 +83,13 @@ export const initMembership = (sequelize) => {
         type: DataTypes.JSON,
         defaultValue: [],
       },
+      // Google Drive folder link where the generated application PDF and the
+      // applicant's uploaded documents are archived. Empty when Drive export
+      // is not configured or failed (submission still succeeds either way).
+      driveFolderUrl: {
+        type: DataTypes.STRING(500),
+        defaultValue: '',
+      },
       details: {
         type: DataTypes.TEXT,
         defaultValue: '',

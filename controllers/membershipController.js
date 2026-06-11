@@ -1,6 +1,8 @@
 import { getMembership, getUser } from '../models/index.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { uploadFile } from '../utils/uploadAsset.js';
+import { buildMembershipPdf } from '../utils/membershipPdf.js';
+import { exportMembershipToDrive } from '../utils/driveExport.js';
 
 const REQUIRED_SCALARS = [
   'name',
@@ -81,6 +83,37 @@ export const submitMembership = asyncHandler(async (req, res) => {
   const uploadAll = (multerFiles, folder) =>
     Promise.all((multerFiles || []).map((f) => uploadFile(req, f, folder)));
 
+  // Archive to Google Drive BEFORE the Cloudinary step (which deletes the temp
+  // files). Generates a PDF of the submitted form and uploads it plus every
+  // document into a per-applicant folder. Best-effort: a Drive failure must
+  // never block the application from being saved.
+  let driveFolderUrl = '';
+  try {
+    const pdfBuffer = await buildMembershipPdf({ ...body, degrees });
+    const driveFiles = [];
+    const collect = (arr, label) =>
+      (arr || []).forEach((f, i) =>
+        driveFiles.push({
+          path: f.path,
+          mimetype: f.mimetype,
+          driveName: `${label}${arr.length > 1 ? `-${i + 1}` : ''}-${f.originalname}`,
+        })
+      );
+    collect(files.profilePicture, 'ProfilePicture');
+    collect(files.mciCertificate, 'MCI-Certificate');
+    collect(files.govtId, 'Govt-ID');
+    collect(files.degreeCertificates, 'Degree-Certificate');
+
+    driveFolderUrl =
+      (await exportMembershipToDrive({
+        applicantName: body.name,
+        pdfBuffer,
+        files: driveFiles,
+      })) || '';
+  } catch (driveError) {
+    console.error('[drive] membership export failed:', driveError.message);
+  }
+
   const [profilePictureUrl] = await uploadAll(files.profilePicture, 'ficcs-membership/profile');
   const [mciCertificateUrl] = await uploadAll(files.mciCertificate, 'ficcs-membership/mci');
   const govtIdUrls = await uploadAll(files.govtId, 'ficcs-membership/govt-id');
@@ -108,6 +141,7 @@ export const submitMembership = asyncHandler(async (req, res) => {
     mciCertificateUrl,
     govtIdUrls,
     degreeCertificateUrls,
+    driveFolderUrl,
     // Link to the logged-in applicant when available (route is protected).
     userId: req.user?.id || null,
     status: 'new',

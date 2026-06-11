@@ -27,6 +27,7 @@ const COLUMNS = [
     name: 'paymentStatus',
     ddl: "ADD COLUMN `paymentStatus` ENUM('pending','approved') NOT NULL DEFAULT 'pending'",
   },
+  { name: 'driveFolderUrl', ddl: "ADD COLUMN `driveFolderUrl` VARCHAR(500) NOT NULL DEFAULT ''" },
 ];
 
 /**
