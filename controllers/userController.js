@@ -1,4 +1,4 @@
-import { getUser, getEvent, getActivity, getMedia as getMediaModel, getMembership, getContact } from '../models/index.js';
+import { getUser, getEvent, getActivity, getMedia as getMediaModel, getMembership, getContact, getUserMessageState } from '../models/index.js';
 import { Op } from 'sequelize';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 
@@ -84,6 +84,100 @@ export const revokeUser = asyncHandler(async (req, res) => {
       approvedAt: user.approvedAt,
     },
   });
+});
+
+/**
+ * Change a user's role between 'admin' and 'user'.
+ *  - role='admin'  → promote to admin (status forced to 'approved').
+ *  - role='user'   → demote to regular user (status reset to 'pending',
+ *                    membership cleared so they're a plain user again).
+ * Guards: an admin cannot demote themselves, and the last remaining admin
+ * cannot be demoted (prevents lockout).
+ */
+export const setUserRole = asyncHandler(async (req, res) => {
+  const User = getUser();
+  const { role } = req.body;
+  if (!['admin', 'user'].includes(role)) {
+    res.status(400);
+    throw new Error("role must be 'admin' or 'user'");
+  }
+
+  const user = await User.findByPk(req.params.id);
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  if (role === 'user' && user.role === 'admin') {
+    if (String(user.id) === String(req.user.id)) {
+      res.status(400);
+      throw new Error('You cannot remove your own admin access');
+    }
+    const adminCount = await User.count({ where: { role: 'admin' } });
+    if (adminCount <= 1) {
+      res.status(400);
+      throw new Error('Cannot demote the last remaining admin');
+    }
+    user.role = 'user';
+    user.status = 'pending';
+    user.approvedAt = null;
+  } else if (role === 'admin') {
+    user.role = 'admin';
+    user.status = 'approved';
+    if (!user.approvedAt) user.approvedAt = new Date();
+  }
+
+  await user.save();
+  res.json({
+    message: 'Role updated',
+    user: {
+      _id: user.id,
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      approvedAt: user.approvedAt,
+    },
+  });
+});
+
+/**
+ * Permanently delete a single user account and clean up linked records:
+ *  - removes their notification read-state rows
+ *  - unlinks (nulls) any membership application that pointed to them
+ * Guards against deleting yourself or the last admin.
+ */
+export const deleteUser = asyncHandler(async (req, res) => {
+  const User = getUser();
+  const Membership = getMembership();
+  const UserMessageState = getUserMessageState();
+
+  const user = await User.findByPk(req.params.id);
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  if (String(user.id) === String(req.user.id)) {
+    res.status(400);
+    throw new Error('You cannot delete your own account');
+  }
+
+  if (user.role === 'admin') {
+    const adminCount = await User.count({ where: { role: 'admin' } });
+    if (adminCount <= 1) {
+      res.status(400);
+      throw new Error('Cannot delete the last remaining admin');
+    }
+  }
+
+  // Clean up linked data so nothing is left orphaned / inconsistent.
+  await UserMessageState.destroy({ where: { userId: user.id } });
+  await Membership.update({ userId: null }, { where: { userId: user.id } });
+
+  await user.destroy();
+  res.json({ message: 'User deleted', id: Number(req.params.id), deleted: true });
 });
 
 /**

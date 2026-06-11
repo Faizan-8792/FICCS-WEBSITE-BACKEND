@@ -4,10 +4,12 @@ import {
   assignMemberCode,
   clearAllMemberCodes,
   deleteAllMembers,
+  deleteUser,
   getDashboardOverview,
   getPendingUsers,
   getUsers,
   revokeUser,
+  setUserRole,
   suggestMemberCode,
 } from '../controllers/userController.js';
 import { adminOnly, protect } from '../middleware/authMiddleware.js';
@@ -23,6 +25,8 @@ router.delete('/member-code/all', clearAllMemberCodes);
 router.delete('/members/all', deleteAllMembers);
 router.patch('/:id/approve', approveUser);
 router.patch('/:id/revoke', revokeUser);
+router.patch('/:id/role', setUserRole);
 router.patch('/:id/member-code', assignMemberCode);
+router.delete('/:id', deleteUser);
 
 export default router;
