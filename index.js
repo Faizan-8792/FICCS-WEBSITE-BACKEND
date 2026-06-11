@@ -9,7 +9,6 @@ import morgan from 'morgan';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootstrapAdmin } from './config/bootstrapAdmin.js';
-import { configureCloudinary } from './config/cloudinary.js';
 import { connectDb, getSequelize } from './config/db.js';
 import { initModels } from './models/index.js';
 import { ensureMembershipColumns } from './scripts/migrateMembershipColumns.js';
@@ -236,7 +235,6 @@ const start = async () => {
     dbReady = true;
     resolveReady();
 
-    configureCloudinary();
     await bootstrapAdmin();
   } catch (error) {
     // Do NOT exit — keep the server up so the platform doesn't crash-loop.

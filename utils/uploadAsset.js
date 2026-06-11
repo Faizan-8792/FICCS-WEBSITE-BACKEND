@@ -1,40 +1,25 @@
-import fs from 'node:fs/promises';
-import { cloudinary } from '../config/cloudinary.js';
-
-const hasCloudinary = () =>
-  Boolean(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-      process.env.CLOUDINARY_API_KEY &&
-      process.env.CLOUDINARY_API_SECRET
-  );
-
+/**
+ * Local (Hostinger) file storage. Multer has already written the uploaded file
+ * to the `uploads/` directory (see middleware/uploadMiddleware.js); we simply
+ * build the public URL that serves it via the static `/uploads` route.
+ *
+ * The `folder` argument is accepted for backwards compatibility with existing
+ * callers but is not used for local storage — all files live under /uploads.
+ */
 const buildLocalUrl = (req, file) =>
   `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
 
 /**
- * Upload a single multer file (from req.file or req.files['fieldname'][i]) to
- * Cloudinary if configured, otherwise fall back to the local /uploads URL.
- * Always cleans up the temp file on the cloud path.
+ * Return the public URL for a single multer file (from req.file or
+ * req.files['fieldname'][i]). The file is kept on disk so it can be served.
  */
-export const uploadFile = async (req, file, folder = 'ficcs') => {
+export const uploadFile = async (req, file /* , folder */) => {
   if (!file) return null;
-
-  if (hasCloudinary()) {
-    const result = await cloudinary.uploader.upload(file.path, {
-      folder,
-      resource_type: 'auto',
-    });
-    await fs.unlink(file.path).catch(() => {});
-    return result.secure_url;
-  }
-
   return buildLocalUrl(req, file);
 };
 
 /**
- * Backwards-compatible helper that uploads `req.file` and returns the URL.
- * Preserved so existing callers (mediaController.uploadMediaAsset) keep
- * working without changes.
+ * Backwards-compatible helper that returns the URL for `req.file`.
+ * Preserved so existing callers (mediaController.uploadMediaAsset) keep working.
  */
-export const uploadAsset = (req, folder = 'ficcs') =>
-  uploadFile(req, req.file, folder);
+export const uploadAsset = (req /* , folder */) => uploadFile(req, req.file);

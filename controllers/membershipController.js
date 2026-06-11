@@ -83,10 +83,10 @@ export const submitMembership = asyncHandler(async (req, res) => {
   const uploadAll = (multerFiles, folder) =>
     Promise.all((multerFiles || []).map((f) => uploadFile(req, f, folder)));
 
-  // Archive to Google Drive BEFORE the Cloudinary step (which deletes the temp
-  // files). Generates a PDF of the submitted form and uploads it plus every
-  // document into a per-applicant folder. Best-effort: a Drive failure must
-  // never block the application from being saved.
+  // Archive to Google Drive BEFORE the upload step removes anything. Generates
+  // a PDF of the submitted form and uploads it plus every document into a
+  // per-applicant folder. Best-effort: a Drive failure must never block the
+  // application from being saved.
   let driveFolderUrl = '';
   try {
     const pdfBuffer = await buildMembershipPdf({ ...body, degrees });
