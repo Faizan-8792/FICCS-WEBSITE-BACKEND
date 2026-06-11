@@ -244,27 +244,31 @@ export const autoAssignMemberCodes = asyncHandler(async (req, res) => {
   const year = new Date().getFullYear();
   const prefix = `FICCS-${year}-`;
 
-  const members = await User.findAll({
-    where: { role: 'user', status: 'approved' },
-    order: [
-      ['approvedAt', 'ASC'],
-      ['id', 'ASC'],
-    ],
+  const n = await User.sequelize.transaction(async (t) => {
+    const members = await User.findAll({
+      where: { role: 'user', status: 'approved' },
+      order: [
+        ['approvedAt', 'ASC'],
+        ['id', 'ASC'],
+      ],
+      transaction: t,
+    });
+
+    // Clear the member set's codes first so re-numbering can reuse the range
+    // without colliding with their own previous codes.
+    await User.update(
+      { memberCode: null },
+      { where: { role: 'user', status: 'approved' }, transaction: t }
+    );
+
+    let i = 0;
+    for (const m of members) {
+      i += 1;
+      m.memberCode = `${prefix}${String(i).padStart(2, '0')}`;
+      await m.save({ transaction: t });
+    }
+    return i;
   });
-
-  // Clear the member set's codes first so re-numbering can reuse the range
-  // without colliding with their own previous codes.
-  await User.update(
-    { memberCode: null },
-    { where: { role: 'user', status: 'approved' } }
-  );
-
-  let n = 0;
-  for (const m of members) {
-    n += 1;
-    m.memberCode = `${prefix}${String(n).padStart(2, '0')}`;
-    await m.save();
-  }
 
   res.json({ message: 'Member codes auto-assigned', assigned: n, year });
 });
